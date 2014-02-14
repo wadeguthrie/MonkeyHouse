@@ -10,18 +10,19 @@ class Log(object):
   (TRIGGER_ACTIVATE, RULE_FIRE, HARDWARE_COMMUNICATION,
    REMOTE_NODE_COMMUNICATION, TARGRT_INPUT, USER_INPUT, ERROR, STATE) = range(8)
   (ERROR, WARNING, INFO) = range(3)
-  __type_str = {TRIGGER_ACTIVATE: 'TRIGGER_ACTIVATE',
-                RULE_FIRE: 'RULE_FIRE',
-                HARDWARE_COMMUNICATION: 'HARDWARE_COMMUNICATION',
-                REMOTE_NODE_COMMUNICATION: 'REMOTE_NODE_COMMUNICATION',
-                TARGRT_INPUT: 'TARGRT_INPUT',
-                USER_INPUT: 'USER_INPUT',
-                STATE: 'STATE'}
-  __severity_str = {ERROR: 'ERROR',
-                    WARNING: 'WARNING',
-                    INFO: 'INFO'}
+  __type_str = {TRIGGER_ACTIVATE: 'trigger_activate',
+                RULE_FIRE: 'rule_fire',
+                HARDWARE_COMMUNICATION: 'hardware_communication',
+                REMOTE_NODE_COMMUNICATION: 'remote_node_communication',
+                TARGRT_INPUT: 'targrt_input',
+                USER_INPUT: 'user_input',
+                STATE: 'state'}
+  __severity_str = {ERROR: 'error',
+                    WARNING: 'warning',
+                    INFO: 'info'}
   __date_format = "%Y-%m-%d %H:%M:%S.%f"
 
+  # TODO: needs to include max_bytes_per_file and max_bytes_total
   def __init__(self, executive, path, max_bytes):
     self.log_path = path # describes the directory that contains the log files.
     self.file = None # file descriptor used to communicate with the currently open log file.
@@ -49,8 +50,9 @@ class Log(object):
       self.__open_new_log_file()
     else:
       self.bytes_this_file = lastsize
-      self.file = open(lastpath, 'w')
-    # TODO: this should be a context manager
+      self.file = open(lastpath, 'a')
+      # TODO: need to save state each time we open
+    # TODO: this should be a context manager (and closing needs ']')
 
   def __open_new_log_file(self):
     now = datetime.datetime.now()
@@ -61,10 +63,10 @@ class Log(object):
     self.filenames.append(filepath)
     self.file = open(filepath, 'w')
     state = self.executive.get_state()
-    outstring = '%s: {"time": %s, "state": %s},\nENTRIES : [' % (
+    outstring = '"%s": {"time": "%s", "state": %s},\n"entries" : [\n' % (
       self.__type_str[self.STATE],
       datetime.datetime.strftime(now, Log.__date_format),
-      json.dumps(state))
+      json.dumps(state, indent=2))
     self.file.write(outstring)
 
   def log(self, severity, reason, entry):
@@ -78,9 +80,9 @@ class Log(object):
 
     # TODO: what to do about severity
     now = datetime.datetime.now()
-    outstring = '{ "TIME": "%s", "%s" : %s },' % (
-      self.__type_str[reason],
+    outstring = '{ "time": "%s", "%s" : %s },\n' % (
       datetime.datetime.strftime(now, Log.__date_format),
+      self.__type_str[reason],
       json.dumps(entry))
     self.file.write(outstring)
     # TODO: flush
