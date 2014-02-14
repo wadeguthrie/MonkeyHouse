@@ -22,15 +22,14 @@ class Log(object):
                     INFO: 'info'}
   __date_format = "%Y-%m-%d %H:%M:%S.%f"
 
-  # TODO: needs to include max_bytes_per_file and max_bytes_total
-  def __init__(self, executive, path, max_bytes):
+  def __init__(self, executive, path, max_bytes_per_file, max_bytes_total):
     self.log_path = path # describes the directory that contains the log files.
     self.file = None # file descriptor used to communicate with the currently open log file.
     self.bytes_this_file = 0 # count of the number of bytes written to the current log file.
     self.total_bytes = 0 # count of the number of bytes written to the current log file.
-    self.max_total_bytes = max_bytes # number of bytes distributed across the logfiles that causes the oldest logfile to be deleted.
+    self.max_bytes_total = max_bytes_total # number of bytes distributed across the logfiles that causes the oldest logfile to be deleted.
     self.executive = executive # Needed to get system state.
-    self.max_bytes_per_file = 20 * 1024 * 1024  # Arbitrary.
+    self.max_bytes_per_file = max_bytes_per_file
     self.filenames = []
 
     if not os.path.exists(self.log_path):
@@ -51,23 +50,27 @@ class Log(object):
     else:
       self.bytes_this_file = lastsize
       self.file = open(lastpath, 'a')
-      # TODO: need to save state each time we open
+      self.__save_state()
     # TODO: this should be a context manager (and closing needs ']')
 
-  def __open_new_log_file(self):
-    now = datetime.datetime.now()
-    filename = 'mkyhs-log-%04d-%02d%02d-%02d%02d' % (now.year, now.month, now.day,
-                                                     now.hour, now.minute)
-    # TODO: time to the second
-    filepath = os.path.join(self.log_path, filename)
-    self.filenames.append(filepath)
-    self.file = open(filepath, 'w')
+  def __save_state(self, now=None):
+    if now is None:
+      now = datetime.datetime.now()
     state = self.executive.get_state()
     outstring = '"%s": {"time": "%s", "state": %s},\n"entries" : [\n' % (
       self.__type_str[self.STATE],
       datetime.datetime.strftime(now, Log.__date_format),
       json.dumps(state, indent=2))
     self.file.write(outstring)
+
+  def __open_new_log_file(self):
+    now = datetime.datetime.now()
+    filename = 'mkyhs-log-%04d-%02d%02d-%02d%02d' % (now.year, now.month, now.day,
+                                                     now.hour, now.minute)
+    filepath = os.path.join(self.log_path, filename)
+    self.filenames.append(filepath)
+    self.file = open(filepath, 'w')
+    self.__save_state(now)
 
   def log(self, severity, reason, entry):
     """
@@ -100,7 +103,7 @@ class Log(object):
 
       # Delete the oldest file if we can delete it and still stay over the
       # max.
-      if self.total_bytes - oldest_bytes > self.max_total_bytes:
+      if self.total_bytes - oldest_bytes > self.max_bytes_total:
         filepath = self.filenames.pop(0)
         os.remove(filepath)
 

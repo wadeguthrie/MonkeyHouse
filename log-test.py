@@ -20,7 +20,10 @@ class LogTestCase(unittest.TestCase):
 
   def test_makeevent(self): # ALL tests must start with 'test'
     executive = Executive.Executive()
-    log = Log.Log(executive, "TestLog", 1024 * 1024 * 1024)
+    log = Log.Log(executive = executive,
+                  path = "TestLog",
+                  max_bytes_per_file  = 20 * 1024 * 1024,
+                  max_bytes_total = 1024 * 1024 * 1024)
     log.log(Log.Log.INFO, Log.Log.USER_INPUT, {"name" : "foo"})
     assert True
 
