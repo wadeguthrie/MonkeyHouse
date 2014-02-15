@@ -1,8 +1,10 @@
 #! /usr/bin/python
 
 import datetime
+import errno
 import json
 import os
+import sys
 
 import Executive
 
@@ -32,6 +34,9 @@ class Log(object):
     self.max_bytes_per_file = max_bytes_per_file
     self.filenames = []
 
+  """Context manager for logging."""
+
+  def __enter__(self):
     if not os.path.exists(self.log_path):
       os.mkdir(self.log_path)
 
@@ -49,9 +54,24 @@ class Log(object):
       self.__open_new_log_file()
     else:
       self.bytes_this_file = lastsize
-      self.file = open(lastpath, 'a')
-      self.__save_state()
-    # TODO: this should be a context manager (and closing needs ']')
+      try:
+        self.file = open(lastpath, 'a')
+      except:
+        self.__exit__(*sys.exc_info())
+      else:
+        self.__save_state()
+    return self
+
+  def __exit__ (self, exception_type, exception_value, exception_traceback):
+    if self.file is not None:
+      self.file.write(']')
+      self.file.close()
+      self.file = None
+    if exception_type is not None:
+      print 'EXCEPTION type: %r' % exception_type
+      print 'EXCEPTION val: %s' % exception_value
+      print 'Traceback: %r' % exception_traceback
+    return True
 
   def __save_state(self, now=None):
     if now is None:
@@ -65,12 +85,17 @@ class Log(object):
 
   def __open_new_log_file(self):
     now = datetime.datetime.now()
+    # TODO: add second and millisecond
     filename = 'mkyhs-log-%04d-%02d%02d-%02d%02d' % (now.year, now.month, now.day,
                                                      now.hour, now.minute)
     filepath = os.path.join(self.log_path, filename)
     self.filenames.append(filepath)
-    self.file = open(filepath, 'w')
-    self.__save_state(now)
+    try:
+      self.file = open(filepath, 'w')
+    except:
+      self.__exit__(*sys.exc_info())
+    else:
+      self.__save_state(now)
 
   def log(self, severity, reason, entry):
     """
@@ -88,7 +113,7 @@ class Log(object):
       self.__type_str[reason],
       json.dumps(entry))
     self.file.write(outstring)
-    # TODO: flush
+    self.file.flush()
 
     self.bytes_this_file += len(outstring)
     self.total_bytes += len(outstring)
