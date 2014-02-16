@@ -53,7 +53,7 @@ class LogTestCase(unittest.TestCase):
 
         assert len(os.listdir(self.LOG_PATH)) == 3
         entries = []
-        for filename in os.listdir(self.LOG_PATH):
+        for filename in sorted(os.listdir(self.LOG_PATH)):
             filepath = os.path.join(self.LOG_PATH, filename)
             print "\n-- %s --" % filepath
             with file(filepath, 'r') as f:

@@ -34,6 +34,7 @@ class Log(object):
         self.executive = executive # Needed to get system state.
         self.max_bytes_per_file = max_bytes_per_file
         self.filenames = []
+        self.first_entry = True
 
     """Context manager for logging."""
 
@@ -67,9 +68,7 @@ class Log(object):
 
     def __exit__ (self, exception_type, exception_value, exception_traceback):
         if self.file is not None:
-            self.file.write(']')
-            self.file.close()
-            self.file = None
+            self.__close_log_file()
         if exception_type is not None:
             print 'EXCEPTION type: %r' % exception_type
             print 'EXCEPTION val: %s' % exception_value
@@ -84,6 +83,7 @@ class Log(object):
                 self.__type_str[self.STATE],
                 datetime.datetime.strftime(now, Log.__date_format),
                 json.dumps(state, indent=2))
+        self.first_entry = True
         self.file.write(outstring)
         self.bytes_this_file += len(outstring)
         self.total_bytes += len(outstring)
@@ -100,8 +100,14 @@ class Log(object):
         except:
             self.__exit__(*sys.exc_info())
         else:
-            self.bytes_this_file = 0
+            self.bytes_this_file = 2
+            self.file.write('{\n')
             self.__save_state(now)
+
+    def __close_log_file(self):
+        self.file.write(']}')
+        self.file.close()
+        self.file = None
 
     def log(self, severity, reason, entry):
         """
@@ -114,18 +120,19 @@ class Log(object):
 
         # TODO: what to do about severity
         now = datetime.datetime.now()
-        outstring = '{ "time": "%s", "%s" : %s },\n' % (
+        outstring = ',' if not self.first_entry else ''
+        outstring += '{ "time": "%s", "%s" : %s }\n' % (
             datetime.datetime.strftime(now, Log.__date_format),
             self.__type_str[reason],
             json.dumps(entry))
         self.file.write(outstring)
         self.file.flush()
+        self.first_entry = False
 
         self.bytes_this_file += len(outstring)
         self.total_bytes += len(outstring)
         if self.bytes_this_file > self.max_bytes_per_file:
-            self.file.write(']')
-            self.file.close()
+            self.__close_log_file()
             self.__open_new_log_file()
 
         # TODO: do this in a loop
