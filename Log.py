@@ -113,7 +113,6 @@ class Log(object):
         """
         entry (JSON-equivalent  data structure)
         """
-        print "LOGGING"
         # strptime() <- string
         # strftime() -> string
         # ("%Y-%m-%d %H:%M:%S.%f")

@@ -9,8 +9,8 @@ import Executive
 import Log
 
 class LogTestCase(unittest.TestCase):
-    HEADER_BYTES = 113
-    ENTRY_BYTES = 75
+    HEADER_BYTES = 115
+    ENTRY_BYTES = 76
     MAX_BYTES_FILE = HEADER_BYTES + 3 * ENTRY_BYTES
     MAX_BYTES_TOTAL = MAX_BYTES_FILE * 6
     LOG_PATH = "TestLog"
@@ -35,8 +35,8 @@ class LogTestCase(unittest.TestCase):
     def test_log_empty_dir(self): # ALL tests must start with 'test'
         executive = Executive.Executive()
         counter_start = self.counter
-        entries = 8
-        beyond_max_entry = counter_start + entries
+        entry_count = 8
+        beyond_max_entry = counter_start + entry_count
 
         if os.path.exists(self.LOG_PATH):
             shutil.rmtree(self.LOG_PATH)  # Start by deleting the previous log
@@ -49,7 +49,7 @@ class LogTestCase(unittest.TestCase):
                                                            self.counter})
                 self.counter += 1
 
-        # Verify
+        # Verify by reading the data back from the files.
 
         assert len(os.listdir(self.LOG_PATH)) == 3
         entries = []
@@ -57,8 +57,18 @@ class LogTestCase(unittest.TestCase):
             filepath = os.path.join(self.LOG_PATH, filename)
             print "\n-- %s --" % filepath
             with file(filepath, 'r') as f:
-                stuff = f.read()
-                print "%r" % json.loads(stuff)
+                whole_file = f.read()
+                data = json.loads(whole_file)
+                for entry in data['entries']:
+                    entries.append(entry['user_input']['value'])
+
+        # Make sure we read all the entries we wrote.
+        assert len(entries) == entry_count
+
+        # Make sure we read the specific entries we wrote (in the same order).
+        for entry in entries:
+            assert entry == counter_start
+            counter_start += 1
 
 if __name__ == '__main__':
     unittest.main() # runs all tests
