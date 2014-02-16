@@ -24,6 +24,7 @@ class Log(object):
             WARNING: 'warning',
             INFO: 'info'}
     __date_format = "%Y-%m-%d %H:%M:%S.%f"
+    __FILE_TAILER = '\n]}'
 
     def __init__(self, executive, path, max_bytes_per_file, max_bytes_total):
         self.log_path = path # describes the directory that contains the log files.
@@ -54,6 +55,7 @@ class Log(object):
             lastsize = stat.st_size
 
         # Open either the most recent one or a new one.
+        # NOTE: Perhaps I shouldn't open anything until the first log.
         if lastpath is None or lastsize >= self.max_bytes_per_file:
             self.__open_new_log_file()
         else:
@@ -91,8 +93,8 @@ class Log(object):
     def __open_new_log_file(self):
         now = datetime.datetime.now()
         filename = 'mkyhs-log-%04d-%02d%02d-%02d%02d-%02d-%06d' % (
-                now.year, now.month, now.day, now.hour, now.minute, now.second,
-                now.microsecond)
+                now.year, now.month, now.day,
+                now.hour, now.minute, now.second, now.microsecond)
         filepath = os.path.join(self.log_path, filename)
         self.filenames.append(filepath)
         try:
@@ -100,12 +102,14 @@ class Log(object):
         except:
             self.__exit__(*sys.exc_info())
         else:
-            self.bytes_this_file = 2
-            self.file.write('{\n')
+            file_header = '{\n'
+            self.bytes_this_file = len(file_header) + len(self.__FILE_TAILER) 
+            self.file.write(file_header)
             self.__save_state(now)
+            print "HEADER Bytes: %d" % self.bytes_this_file
 
     def __close_log_file(self):
-        self.file.write(']}')
+        self.file.write(self.__FILE_TAILER)
         self.file.close()
         self.file = None
 
@@ -113,14 +117,16 @@ class Log(object):
         """
         entry (JSON-equivalent  data structure)
         """
+        if self.file is None:
+            self.__open_new_log_file()
         # strptime() <- string
         # strftime() -> string
         # ("%Y-%m-%d %H:%M:%S.%f")
 
         # TODO: what to do about severity
         now = datetime.datetime.now()
-        outstring = ',' if not self.first_entry else ''
-        outstring += '{ "time": "%s", "%s" : %s }\n' % (
+        outstring = ',\n' if not self.first_entry else ''
+        outstring += '{ "time": "%s", "%s" : %s }' % (
             datetime.datetime.strftime(now, Log.__date_format),
             self.__type_str[reason],
             json.dumps(entry))
@@ -130,9 +136,10 @@ class Log(object):
 
         self.bytes_this_file += len(outstring)
         self.total_bytes += len(outstring)
-        if self.bytes_this_file > self.max_bytes_per_file:
+        print "ADDING Bytes: %d" % len(outstring)
+        print "bytes this file=%d, max per file=%d" % (self.bytes_this_file, self.max_bytes_per_file)
+        if self.bytes_this_file >= self.max_bytes_per_file:
             self.__close_log_file()
-            self.__open_new_log_file()
 
         # TODO: do this in a loop
         stat = os.stat(self.filenames[0])
