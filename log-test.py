@@ -17,10 +17,11 @@ class LogTestCase(unittest.TestCase):
                       (ENTRIES_PER_FILE - 1)) # For commas between entries.
     MAX_BYTES_TOTAL = MAX_BYTES_FILE * 6
     LOG_PATH = "TestLog"
+    COUNTER_START = 10  # Hack: all entries will be same size since counter
+                        # is always 2 digits.
 
     def __init__(self, *args, **kwargs):
-        self.counter = 10  # Hack: all entries will be same size since counter
-                           # is always 2 digits.
+        self.counter = self.COUNTER_START
         super(LogTestCase, self).__init__(*args, **kwargs)
 
     def setUp(self):
@@ -29,17 +30,22 @@ class LogTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def __engine(self, clean_start, entry_count, expected_file_count):
+    def __engine(self,
+                 clean_start,
+                 entry_count,
+                 start_verification_at,
+                 expected_file_count):
         executive = Executive.Executive()
-        counter_start = self.counter
-        beyond_max_entry = counter_start + entry_count
+        beyond_max_entry = self.counter + entry_count
 
         if clean_start and os.path.exists(self.LOG_PATH):
+            # print "deleting %s" % self.LOG_PATH
             shutil.rmtree(self.LOG_PATH)  # Start by deleting the previous log
         with Log.Log(executive = executive,
                      path = self.LOG_PATH,
                      max_bytes_per_file = LogTestCase.MAX_BYTES_FILE,
-                     max_bytes_total = LogTestCase.MAX_BYTES_TOTAL) as log:
+                     max_bytes_total = LogTestCase.MAX_BYTES_TOTAL,
+                     verbose=False) as log:
             while self.counter < beyond_max_entry:
                 log.log(Log.Log.INFO, Log.Log.USER_INPUT, {"value" :
                                                            self.counter})
@@ -57,39 +63,47 @@ class LogTestCase(unittest.TestCase):
                 for entry in data['entries']:
                     entries.append(entry['user_input']['value'])
 
+
         # Make sure we read all the entries we wrote.
-        assert len(entries) == entry_count
+        # TODO: doesn't deal with previous entries
+        print "entries=%d, s.b. count=%d - start=%d = %d" % (len(entries),
+                self.counter, start_verification_at, (self.counter -
+                    start_verification_at))
+        assert len(entries) == self.counter - start_verification_at
 
         # Make sure we read the specific entries we wrote (in the same order).
         for entry in entries:
-            assert entry == counter_start
-            counter_start += 1
+            assert entry == start_verification_at
+            start_verification_at += 1
 
-    def test_log_empty_dir(self):
+    def test_log(self):
+        print "\n-- test_log_empty_dir --"
+        # 7 entries: 3 3 1=(216)
         self.__engine(clean_start = True,
-                      entry_count = 8,
+                      entry_count = (self.ENTRIES_PER_FILE * 2) + 1,
+                      start_verification_at = self.COUNTER_START,
                       expected_file_count = 3)
 
-    # TODO: need to account for size of header in entry count
-    # TODO: need to include pre-existing entries in verification run
+        # +3 entries = 11 entries: 3 3 1 3
+        print "\n-- test_log_add_to_file --"
+        self.__engine(clean_start = False,
+                      entry_count = 3,
+                      start_verification_at = self.COUNTER_START,
+                      expected_file_count = 4)
 
-    # TODO:        += 4 entries = 12 entries: 3 3 H3 3
-    #def test_log_add_to_file(self):
-    #    self.__engine(clean_start = True,
-    #                  entry_count = 4,
-    #                  expected_file_count = 4)
+        # +5 entries = 16 entries: 3 3 H3 3 3 2
+        #    print "\n-- test_log_new_file_on_first_log --"
+        #    self.__engine(clean_start = False,
+        #                  entry_count = 5,
+        #                  start_verification_at = self.COUNTER_START,
+        #                  expected_file_count = 6)
 
-    # TODO:        += 5 entries = 17 entries: 3 3 H3 3 3 2
-    #def test_log_new_file_on_first_log(self):
-    #    self.__engine(clean_start = True,
-    #                  entry_count = 5,
-    #                  expected_file_count = 6)
-
-    # TODO:        += 6 entries = 23 entries: x 3 H3 3 3 H3 3 2
-    #def test_log_wrap_and_delete_file(self):
-    #    self.__engine(clean_start = True,
-    #                  entry_count = 6,
-    #                  expected_file_count = 7)
+        # +6 entries = 22 entries: x 3 H3 3 3 H3 3 2
+        #    print "\n-- test_log_wrap_and_delete_file --"
+        #    self.__engine(clean_start = False,
+        #                  entry_count = 6,
+        #                  start_verification_at = self.COUNTER_START + 3,
+        #                  expected_file_count = 7)
 
 if __name__ == '__main__':
     unittest.main() # runs all tests
