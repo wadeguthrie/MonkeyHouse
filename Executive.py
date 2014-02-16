@@ -2,9 +2,9 @@
 
 class Executive(object):
   (INITIALIZING, OPERATING, SUSPENDED_OPERATION) = range(3)
-  __state_str = {INITIALIZING: 'INITIALIZING',
-                 OPERATING: 'OPERATING',
-                 SUSPENDED_OPERATION: 'SUSPENDED_OPERATION'}
+  __state_str = {INITIALIZING: 'initializing',
+                 OPERATING: 'operating',
+                 SUSPENDED_OPERATION: 'suspended_operation'}
 
   def __init__(self):
     self.state = self.INITIALIZING
@@ -13,8 +13,8 @@ class Executive(object):
 
   def get_state(self):
     state = {
-      "STATE" : self.__state_str[self.state],
-      "TARGETS" : []
+      "state" : self.__state_str[self.state],
+      "targets" : []
     }
     #for targets in self.__targets:
       #self.state["TARGETS"].append({target.name : target.get_state()})
