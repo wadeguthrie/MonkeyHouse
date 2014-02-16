@@ -9,11 +9,16 @@ import Executive
 import Log
 
 class LogTestCase(unittest.TestCase):
-    HEADER_BYTES = 115
-    ENTRY_BYTES = 76
-    MAX_BYTES_FILE = HEADER_BYTES + 3 * ENTRY_BYTES
+    HEADER_BYTES = 125
+    ENTRY_BYTES = 71
+    ENTRIES_PER_FILE = 3
+    MAX_BYTES_FILE = (HEADER_BYTES +                      # For header.
+                      (ENTRIES_PER_FILE * ENTRY_BYTES) +  # For entries.
+                      (ENTRIES_PER_FILE - 1)) # For commas between entries.
     MAX_BYTES_TOTAL = MAX_BYTES_FILE * 6
     LOG_PATH = "TestLog"
+    # 412 Header + 4 
+    # 125 Header only
 
     def __init__(self, *args, **kwargs):
         self.counter = 10  # Hack: all entries will be same size since counter
@@ -35,10 +40,10 @@ class LogTestCase(unittest.TestCase):
     def test_log_empty_dir(self): # ALL tests must start with 'test'
         executive = Executive.Executive()
         counter_start = self.counter
-        entry_count = 8
+        entry_count = 8 # XXX: param
         beyond_max_entry = counter_start + entry_count
 
-        if os.path.exists(self.LOG_PATH):
+        if os.path.exists(self.LOG_PATH): # XXX: param
             shutil.rmtree(self.LOG_PATH)  # Start by deleting the previous log
         with Log.Log(executive = executive,
                      path = self.LOG_PATH,
