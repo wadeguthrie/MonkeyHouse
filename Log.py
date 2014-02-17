@@ -25,6 +25,16 @@ class Log(object):
 
     def __init__(self, executive, path, max_bytes_per_file, max_bytes_total,
                  verbose=False):
+        """ Initialize the Log.
+
+        executive (Executive) - Used to retrieve current status.
+        path (string) - Directory to hold the log files.
+        max_bytes_per_file (int) - Close the log file of this size and open a
+                                   new one.
+        max bytes_total (int) - Start deleting files when we go above this.
+        verbose (bool) - True generates additional output.
+        """
+
         self.executive = executive
         self.log_path = path  # Directory that contains the log files.
         self.max_bytes_per_file = max_bytes_per_file
@@ -40,6 +50,10 @@ class Log(object):
     """Context manager for logging."""
 
     def __enter__(self):
+        """ Launches the context manager.
+
+        Gathers information on any existing logfiles.
+        """
         if not os.path.exists(self.log_path):
             os.mkdir(self.log_path)
 
@@ -56,6 +70,10 @@ class Log(object):
         return self
 
     def __exit__(self, exception_type, exception_value, exception_traceback):
+        """ Leaves the context manager.
+
+        Closes any open logfile.
+        """
         if self.file is not None:
             self.__close_log_file()
         if exception_type is not None:
@@ -65,6 +83,15 @@ class Log(object):
         return True
 
     def __open_new_log_file(self, now):
+        """ Opens a new log file.
+
+        Names the file (based on the current time -- makes sorting pretty
+        easy).  Gets the current state, in a JSON-equivalent data structure,
+        from the executive and writes it to the file.
+
+        now (datetime) - The current time; used for naming the new file.
+        """
+
         # File.
         filename = 'mkyhs-log-%04d-%02d%02d-%02d%02d-%02d-%06d' % (
             now.year, now.month, now.day,
@@ -86,19 +113,34 @@ class Log(object):
         self.first_entry = True
 
     def __close_log_file(self):
+        """ Writes the tailer to and closes the log file."""
         self.__write_to_file(self.__FILE_TAILER)
         self.file.close()
         self.file = None
 
     def __write_to_file(self, string):
+        """Writes to the log file and keeps track of statistics.
+
+        string (string) - The string to write to the file.
+        """
         self.file.write(string)
         self.file.flush()
         self.bytes_this_file += len(string)
         self.bytes_total += len(string)
 
     def log(self, severity, reason, entry):
-        """
-        entry (JSON-equivalent  data structure)
+        """ Writes an entry to the log file.  Does bookkeeping.
+
+        Opens a logfile if none is open.  Builds a JSON-compatible string with
+        the entry, the time, and the severity of the message.  Writes the
+        string to the file, and does necessary bookkeeping.  Closes the log
+        file if it's too big.  Deletes the oldest logfile in the series if we
+        can do this and still have enough data saved.
+
+        severity (enum) - info, warning, or error.
+        reason (enum) - classification of the message
+        entry (JSON-equivalent  data structure) - the thing to write to the
+            logfile.
         """
         now = datetime.datetime.now()
 
