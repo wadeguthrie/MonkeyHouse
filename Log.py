@@ -132,10 +132,18 @@ class Log(object):
         # Delete the oldest file if doing so will leave enough logging data.
 
         oldest_bytes = os.stat(self.filenames[0]).st_size
+        print "Total bytes(%d) - oldest(%d) = %d > max(%d) ? %r" % (
+                self.total_bytes, oldest_bytes,
+                (self.total_bytes - oldest_bytes),
+                self.max_bytes_total,
+                (self.total_bytes - oldest_bytes > self.max_bytes_total))
         if self.total_bytes - oldest_bytes > self.max_bytes_total:
             filepath = self.filenames.pop(0)
             os.remove(filepath)
             self.total_bytes -= oldest_bytes
+            if self.verbose:
+                print 'Removed %s (%d bytes) to get %d bytes' % (
+                        filepath, oldest_bytes, self.total_bytes)
 
 # Main
 if __name__ == '__main__':
