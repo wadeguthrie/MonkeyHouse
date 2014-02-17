@@ -99,6 +99,17 @@ class Log(object):
         self.bytes_this_file += len(string)
         self.bytes_total += len(string)
 
+    # TODO: remove this
+    def __stuff(self, oldest_bytes):
+        sum_bytes = 0
+        for filepath in self.filenames:
+            sum_bytes += os.stat(filepath).st_size
+            print ('%d + ' % os.stat(filepath).st_size),
+        sum_bytes += len(self.__FILE_TAILER)
+        print '%d = %d' % (len(self.__FILE_TAILER), sum_bytes)
+        print 'without first file (%d) = %d' % (oldest_bytes, sum_bytes -
+                oldest_bytes)
+
     def log(self, severity, reason, entry):
         """
         entry (JSON-equivalent  data structure)
@@ -132,11 +143,14 @@ class Log(object):
 
         oldest_bytes = os.stat(self.filenames[0]).st_size
         print "Total bytes(%d) - oldest(%d) = %d > max(%d) ? %r" % (
-                self.bytes_total, oldest_bytes,
-                (self.bytes_total - oldest_bytes),
+                self.bytes_total + len(self.__FILE_TAILER), oldest_bytes,
+                (self.bytes_total + len(self.__FILE_TAILER) - oldest_bytes),
                 self.max_bytes_total,
-                (self.bytes_total - oldest_bytes > self.max_bytes_total))
-        if self.bytes_total - oldest_bytes > self.max_bytes_total:
+                (self.bytes_total + len(self.__FILE_TAILER) - oldest_bytes > self.max_bytes_total))
+        self.__stuff(oldest_bytes)  # TODO: remove this
+
+        if (self.bytes_total + len(self.__FILE_TAILER) - oldest_bytes >=
+                self.max_bytes_total):
             filepath = self.filenames.pop(0)
             os.remove(filepath)
             self.bytes_total -= oldest_bytes
