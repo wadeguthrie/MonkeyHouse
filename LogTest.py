@@ -1,7 +1,5 @@
 #! /usr/bin/python
 
-# TODO: needs license and copyright header
-
 import json
 import os
 import shutil

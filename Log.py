@@ -1,7 +1,5 @@
 #! /usr/bin/python
 
-# TODO: Need the license file header and copyright
-
 import datetime
 import json
 import os
