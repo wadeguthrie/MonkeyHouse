@@ -15,7 +15,8 @@ class LogTestCase(unittest.TestCase):
     MAX_BYTES_FILE = (HEADER_BYTES +                      # For header.
                       (ENTRIES_PER_FILE * ENTRY_BYTES) +  # For entries.
                       (ENTRIES_PER_FILE - 1)) # For commas between entries.
-    MAX_BYTES_TOTAL = MAX_BYTES_FILE * 4 + HEADER_BYTES + ENTRY_BYTES
+    MAX_BYTES_TOTAL = (MAX_BYTES_FILE * 3) + ((HEADER_BYTES + ENTRY_BYTES)
+                                               * 2)
     LOG_PATH = "TestLog"
     COUNTER_START = 10  # Hack: all entries will be same size since counter
                         # is always 2 digits.
