@@ -23,6 +23,11 @@ class LogTestCase(unittest.TestCase):
                         # is always 2 digits.
 
     def __init__(self, *args, **kwargs):
+        """ Initializes the test.
+
+        Just initializes the counter that will be used to mark the entries for
+        debugging.
+        """
         self.counter = self.COUNTER_START
         super(LogTestCase, self).__init__(*args, **kwargs)
 
@@ -31,6 +36,19 @@ class LogTestCase(unittest.TestCase):
                  entry_count,
                  start_verification_at,
                  expected_file_count):
+        """ Does the basic work for each test.
+
+        Deletes the log directory if necessary; builds the entries and logs
+        them; then, reads the log files back and compares them against
+        expectations.
+
+        clean_start (bool) - delete the logfile directories?
+        entry_count (int) - how many entries should be built and logged.
+        start_verification_at (int) - indicates what entries, if any, are
+            expected to be around from previous tests.
+        expected_file_count (int) - inicates what files are expected to exist
+            from previous tests plus the current test.
+        """
         executive = Executive.Executive()
         beyond_max_entry = self.counter + entry_count
 
@@ -71,6 +89,11 @@ class LogTestCase(unittest.TestCase):
             start_verification_at += 1
 
     def test_log(self):
+        """ Contains the tests for the logfile.
+
+        All the tests are in a single file to make it easy to control the
+        order of the tests and to maintain data across the tests.
+        """
         print "\n-- test_log_empty_dir --"
         # 7 entries in 3 files: 3 3 1
         self.__engine(clean_start=True,
