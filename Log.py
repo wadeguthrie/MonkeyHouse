@@ -1,42 +1,39 @@
 #! /usr/bin/python
 
 import datetime
-import errno
 import json
 import os
-import sys
 
-import Executive
 
 class Log(object):
     (TRIGGER_ACTIVATE, RULE_FIRE, HARDWARE_COMMUNICATION,
-            REMOTE_NODE_COMMUNICATION, TARGRT_INPUT, USER_INPUT, ERROR,
-            STATE) = range(8)
+        REMOTE_NODE_COMMUNICATION, TARGRT_INPUT, USER_INPUT, ERROR,
+        STATE) = range(8)
     (ERROR, WARNING, INFO) = range(3)
     __type_str = {TRIGGER_ACTIVATE: 'trigger_activate',
-            RULE_FIRE: 'rule_fire',
-            HARDWARE_COMMUNICATION: 'hardware_communication',
-            REMOTE_NODE_COMMUNICATION: 'remote_node_communication',
-            TARGRT_INPUT: 'target_input',
-            USER_INPUT: 'user_input',
-            STATE: 'state'}
+                  RULE_FIRE: 'rule_fire',
+                  HARDWARE_COMMUNICATION: 'hardware_communication',
+                  REMOTE_NODE_COMMUNICATION: 'remote_node_communication',
+                  TARGRT_INPUT: 'target_input',
+                  USER_INPUT: 'user_input',
+                  STATE: 'state'}
     __severity_str = {ERROR: 'error',
-            WARNING: 'warning',
-            INFO: 'info'}
+                      WARNING: 'warning',
+                      INFO: 'info'}
     __date_format = "%Y-%m-%d %H:%M:%S.%f"
     __FILE_TAILER = '\n]}'
 
     def __init__(self, executive, path, max_bytes_per_file, max_bytes_total,
                  verbose=False):
         self.executive = executive
-        self.log_path = path # Directory that contains the log files.
+        self.log_path = path  # Directory that contains the log files.
         self.max_bytes_per_file = max_bytes_per_file
         self.max_bytes_total = max_bytes_total
         self.verbose = verbose
 
-        self.file = None # For communication with currently open log file.
-        self.bytes_this_file = 0 # Number of bytes in the current log file.
-        self.bytes_total = 0 # Number of bytes among all log files.
+        self.file = None  # For communication with currently open log file.
+        self.bytes_this_file = 0  # Number of bytes in the current log file.
+        self.bytes_total = 0  # Number of bytes among all log files.
         self.filenames = []
         self.first_entry = True
 
@@ -58,7 +55,7 @@ class Log(object):
                                            os.stat(filepath).st_size)
         return self
 
-    def __exit__ (self, exception_type, exception_value, exception_traceback):
+    def __exit__(self, exception_type, exception_value, exception_traceback):
         if self.file is not None:
             self.__close_log_file()
         if exception_type is not None:
@@ -70,14 +67,14 @@ class Log(object):
     def __open_new_log_file(self, now):
         # File.
         filename = 'mkyhs-log-%04d-%02d%02d-%02d%02d-%02d-%06d' % (
-                now.year, now.month, now.day,
-                now.hour, now.minute, now.second, now.microsecond)
+            now.year, now.month, now.day,
+            now.hour, now.minute, now.second, now.microsecond)
         filepath = os.path.join(self.log_path, filename)
         self.file = open(filepath, 'w')
         self.bytes_this_file = 0
         self.filenames.append(filepath)
 
-        self.__write_to_file('{\n') # File header.
+        self.__write_to_file('{\n')  # File header.
 
         # Initial state.
         state = '"%s": {"time": "%s", "state": %s},\n"entries" : [\n' % (
@@ -99,17 +96,6 @@ class Log(object):
         self.bytes_this_file += len(string)
         self.bytes_total += len(string)
 
-    # TODO: remove this
-    def __stuff(self, oldest_bytes):
-        sum_bytes = 0
-        for filepath in self.filenames:
-            sum_bytes += os.stat(filepath).st_size
-            print ('%d + ' % os.stat(filepath).st_size),
-        sum_bytes += len(self.__FILE_TAILER)
-        print '%d = %d' % (len(self.__FILE_TAILER), sum_bytes)
-        print 'without first file (%d) = %d' % (oldest_bytes, sum_bytes -
-                oldest_bytes)
-
     def log(self, severity, reason, entry):
         """
         entry (JSON-equivalent  data structure)
@@ -124,8 +110,8 @@ class Log(object):
         # Write the log message.
         # strptime() <- string
         # strftime() -> string
-        # ("%Y-%m-%d %H:%M:%S.%f")
 
+        # Build and write the log string.
         outstring = ',\n' if not self.first_entry else ''
         outstring += '{ "time": "%s", "severity": "%s", "%s" : %s }' % (
             datetime.datetime.strftime(now, Log.__date_format),
@@ -135,20 +121,13 @@ class Log(object):
         self.__write_to_file(outstring)
         self.first_entry = False
 
+        # Close this file if it's full.
         if (self.bytes_this_file + len(self.__FILE_TAILER) >=
                 self.max_bytes_per_file):
             self.__close_log_file()
 
         # Delete the oldest file if doing so will leave enough logging data.
-
         oldest_bytes = os.stat(self.filenames[0]).st_size
-        print "Total bytes(%d) - oldest(%d) = %d > max(%d) ? %r" % (
-                self.bytes_total + len(self.__FILE_TAILER), oldest_bytes,
-                (self.bytes_total + len(self.__FILE_TAILER) - oldest_bytes),
-                self.max_bytes_total,
-                (self.bytes_total + len(self.__FILE_TAILER) - oldest_bytes > self.max_bytes_total))
-        self.__stuff(oldest_bytes)  # TODO: remove this
-
         if (self.bytes_total + len(self.__FILE_TAILER) - oldest_bytes >=
                 self.max_bytes_total):
             filepath = self.filenames.pop(0)
@@ -156,7 +135,7 @@ class Log(object):
             self.bytes_total -= oldest_bytes
             if self.verbose:
                 print 'Removed %s (%d bytes) to get %d bytes' % (
-                        filepath, oldest_bytes, self.bytes_total)
+                    filepath, oldest_bytes, self.bytes_total)
 
 # Main
 if __name__ == '__main__':
