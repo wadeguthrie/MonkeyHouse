@@ -15,7 +15,7 @@ class LogTestCase(unittest.TestCase):
     MAX_BYTES_FILE = (HEADER_BYTES +                      # For header.
                       (ENTRIES_PER_FILE * ENTRY_BYTES) +  # For entries.
                       (ENTRIES_PER_FILE - 1)) # For commas between entries.
-    MAX_BYTES_TOTAL = MAX_BYTES_FILE * 6
+    MAX_BYTES_TOTAL = MAX_BYTES_FILE * 4 + HEADER_BYTES + ENTRY_BYTES
     LOG_PATH = "TestLog"
     COUNTER_START = 10  # Hack: all entries will be same size since counter
                         # is always 2 digits.
@@ -64,11 +64,8 @@ class LogTestCase(unittest.TestCase):
                     entries.append(entry['user_input']['value'])
 
 
-        # Make sure we read all the entries we wrote.
-        # TODO: doesn't deal with previous entries
-        print "entries=%d, s.b. count=%d - start=%d = %d" % (len(entries),
-                self.counter, start_verification_at, (self.counter -
-                    start_verification_at))
+        # Make sure we read all the entries we wrote plus the ones that were
+        # there, before.
         assert len(entries) == self.counter - start_verification_at
 
         # Make sure we read the specific entries we wrote (in the same order).
@@ -78,32 +75,25 @@ class LogTestCase(unittest.TestCase):
 
     def test_log(self):
         print "\n-- test_log_empty_dir --"
-        # 7 entries: 3 3 1=(216)
+        # 7 entries in 3 files: 3 3 1
         self.__engine(clean_start = True,
                       entry_count = (self.ENTRIES_PER_FILE * 2) + 1,
                       start_verification_at = self.COUNTER_START,
                       expected_file_count = 3)
 
-        # +3 entries = 11 entries: 3 3 1 3
+        # +3 = 10 entries in 4 files: 3 3 1 3
         print "\n-- test_log_add_to_file --"
         self.__engine(clean_start = False,
                       entry_count = 3,
                       start_verification_at = self.COUNTER_START,
                       expected_file_count = 4)
 
-        # +5 entries = 16 entries: 3 3 H3 3 3 2
-        #    print "\n-- test_log_new_file_on_first_log --"
-        #    self.__engine(clean_start = False,
-        #                  entry_count = 5,
-        #                  start_verification_at = self.COUNTER_START,
-        #                  expected_file_count = 6)
-
-        # +6 entries = 22 entries: x 3 H3 3 3 H3 3 2
-        #    print "\n-- test_log_wrap_and_delete_file --"
-        #    self.__engine(clean_start = False,
-        #                  entry_count = 6,
-        #                  start_verification_at = self.COUNTER_START + 3,
-        #                  expected_file_count = 7)
+        # +4 = 14 entries in 5 files: x 3 1 3 3 1
+        print "\n-- test_log_wrap_and_delete_file --"
+        self.__engine(clean_start = False,
+                      entry_count = 4,
+                      start_verification_at = self.COUNTER_START + 3,
+                      expected_file_count = 5)
 
 if __name__ == '__main__':
     unittest.main() # runs all tests
