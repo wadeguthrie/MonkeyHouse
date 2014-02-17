@@ -1,5 +1,7 @@
 #! /usr/bin/python
 
+# TODO: needs license and copyright header
+
 import json
 import os
 import shutil
@@ -10,6 +12,9 @@ import Log
 
 
 class LogTestCase(unittest.TestCase):
+
+    """Tests the MonkeyHouse |Log|."""
+
     HEADER_BYTES = 125
     ENTRY_BYTES = 91
     ENTRIES_PER_FILE = 3
@@ -27,6 +32,7 @@ class LogTestCase(unittest.TestCase):
 
         Just initializes the counter that will be used to mark the entries for
         debugging.
+
         """
         self.counter = self.COUNTER_START
         super(LogTestCase, self).__init__(*args, **kwargs)
@@ -42,12 +48,13 @@ class LogTestCase(unittest.TestCase):
         them; then, reads the log files back and compares them against
         expectations.
 
-        clean_start (bool) - delete the logfile directories?
-        entry_count (int) - how many entries should be built and logged.
-        start_verification_at (int) - indicates what entries, if any, are
-            expected to be around from previous tests.
-        expected_file_count (int) - inicates what files are expected to exist
-            from previous tests plus the current test.
+            clean_start (bool) - delete the logfile directories?
+            entry_count (int) - how many entries should be built and logged.
+            start_verification_at (int) - indicates what entries, if any, are
+                expected to be around from previous tests.
+            expected_file_count (int) - inicates what files are expected to
+                exist from previous tests plus the current test.
+
         """
         executive = Executive.Executive()
         beyond_max_entry = self.counter + entry_count
@@ -88,11 +95,12 @@ class LogTestCase(unittest.TestCase):
             assert entry == start_verification_at
             start_verification_at += 1
 
-    def test_log(self):
+    def testLog(self):
         """ Contains the tests for the logfile.
 
         All the tests are in a single file to make it easy to control the
         order of the tests and to maintain data across the tests.
+
         """
         print "\n-- test_log_empty_dir --"
         # 7 entries in 3 files: 3 3 1
@@ -108,7 +116,7 @@ class LogTestCase(unittest.TestCase):
                       start_verification_at=self.COUNTER_START,
                       expected_file_count=4)
 
-        # +4 = 14 entries in 5 files: x 3 1 3 3 1
+        # +4 = 14 entries in 5 files (1st one should be deleted): x 3 1 3 3 1
         print "\n-- test_log_wrap_and_delete_file --"
         self.__engine(clean_start=False,
                       entry_count=4,
