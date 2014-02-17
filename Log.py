@@ -36,7 +36,7 @@ class Log(object):
 
         self.file = None # For communication with currently open log file.
         self.bytes_this_file = 0 # Number of bytes in the current log file.
-        self.total_bytes = 0 # Number of bytes among all log files.
+        self.bytes_total = 0 # Number of bytes among all log files.
         self.filenames = []
         self.first_entry = True
 
@@ -52,7 +52,7 @@ class Log(object):
         for filename in sorted(os.listdir(self.log_path)):
             filepath = os.path.join(self.log_path, filename)
             self.filenames.append(filepath)
-            self.total_bytes += os.stat(filepath).st_size
+            self.bytes_total += os.stat(filepath).st_size
             if self.verbose:
                 print "  %s (%d bytes)" % (filename,
                                            os.stat(filepath).st_size)
@@ -74,28 +74,30 @@ class Log(object):
                 now.hour, now.minute, now.second, now.microsecond)
         filepath = os.path.join(self.log_path, filename)
         self.file = open(filepath, 'w')
+        self.bytes_this_file = 0
         self.filenames.append(filepath)
 
-        # File header.
-        file_header = '{\n'
-        self.bytes_this_file = len(file_header) + len(self.__FILE_TAILER) 
-        self.file.write(file_header)
+        self.__write_to_file('{\n') # File header.
 
         # Initial state.
         state = '"%s": {"time": "%s", "state": %s},\n"entries" : [\n' % (
                 self.__type_str[self.STATE],
                 datetime.datetime.strftime(now, Log.__date_format),
                 json.dumps(self.executive.get_state(), indent=2))
-        self.file.write(state)
-        self.bytes_this_file += len(state)
-        self.total_bytes += len(state)
+        self.__write_to_file(state)
 
         self.first_entry = True
 
     def __close_log_file(self):
-        self.file.write(self.__FILE_TAILER)
+        self.__write_to_file(self.__FILE_TAILER)
         self.file.close()
         self.file = None
+
+    def __write_to_file(self, string):
+        self.file.write(string)
+        self.file.flush()
+        self.bytes_this_file += len(string)
+        self.bytes_total += len(string)
 
     def log(self, severity, reason, entry):
         """
@@ -119,31 +121,28 @@ class Log(object):
             self.__severity_str[severity],
             self.__type_str[reason],
             json.dumps(entry))
-        self.file.write(outstring)
-        self.file.flush()
+        self.__write_to_file(outstring)
         self.first_entry = False
 
-        self.bytes_this_file += len(outstring)
-        self.total_bytes += len(outstring)
-
-        if self.bytes_this_file >= self.max_bytes_per_file:
+        if (self.bytes_this_file + len(self.__FILE_TAILER) >=
+                self.max_bytes_per_file):
             self.__close_log_file()
 
         # Delete the oldest file if doing so will leave enough logging data.
 
         oldest_bytes = os.stat(self.filenames[0]).st_size
         print "Total bytes(%d) - oldest(%d) = %d > max(%d) ? %r" % (
-                self.total_bytes, oldest_bytes,
-                (self.total_bytes - oldest_bytes),
+                self.bytes_total, oldest_bytes,
+                (self.bytes_total - oldest_bytes),
                 self.max_bytes_total,
-                (self.total_bytes - oldest_bytes > self.max_bytes_total))
-        if self.total_bytes - oldest_bytes > self.max_bytes_total:
+                (self.bytes_total - oldest_bytes > self.max_bytes_total))
+        if self.bytes_total - oldest_bytes > self.max_bytes_total:
             filepath = self.filenames.pop(0)
             os.remove(filepath)
-            self.total_bytes -= oldest_bytes
+            self.bytes_total -= oldest_bytes
             if self.verbose:
                 print 'Removed %s (%d bytes) to get %d bytes' % (
-                        filepath, oldest_bytes, self.total_bytes)
+                        filepath, oldest_bytes, self.bytes_total)
 
 # Main
 if __name__ == '__main__':
