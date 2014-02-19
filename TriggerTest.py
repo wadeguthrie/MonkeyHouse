@@ -5,6 +5,7 @@ import os
 import shutil
 import unittest
 
+import Executive  # TODO: Mock
 import Trigger
 
 
@@ -28,12 +29,10 @@ class TriggerTestCase(unittest.TestCase):
           'type': 'message',
           'template': 1 # TODO
         }
-        executive = 1 # TODO
+        executive = Executive.Executive()
         parent = 2 # TODO
-        trigger = Trigger.TriggerFactory.NewTrigger(data,
-                                            executive,
-                                            parent,
-                                            Trigger.Trigger.FIRING)
+        trigger = Trigger.TriggerFactory.NewTrigger(
+                data, executive, parent, Trigger.Trigger.FIRING)
 
     def testTimerTrigger(self):
         print '\n----- testTimerTrigger -----'
@@ -42,12 +41,10 @@ class TriggerTestCase(unittest.TestCase):
           'type': 'timer', 
           'time': 3 # TODO
         }
-        executive = 1 # TODO:
+        executive = Executive.Executive()
         parent = 2 # TODO
-        trigger = Trigger.TriggerFactory.NewTrigger(data,
-                                            executive,
-                                            parent,
-                                            Trigger.Trigger.FIRING)
+        trigger = Trigger.TriggerFactory.NewTrigger(
+                data, executive, parent, Trigger.Trigger.FIRING)
 
     def testElapsedTimeTrigger(self):
         print '\n----- testElapsedTimeTrigger -----'
@@ -56,43 +53,36 @@ class TriggerTestCase(unittest.TestCase):
           'type': 'elapsed-time', 
           'time': 3 # TODO
         }
-        executive = 1 # TODO
+        executive = Executive.Executive()
         parent = 2 # TODO
-        trigger = Trigger.TriggerFactory.NewTrigger(data,
-                                            executive,
-                                            parent,
-                                            Trigger.Trigger.FIRING_DEFIRING)
+        trigger = Trigger.TriggerFactory.NewTrigger(
+                data, executive, parent, Trigger.Trigger.FIRING_DEFIRING)
 
     def testAndTrigger(self):
         print '\n----- testAndTrigger -----'
         data = { 'name': 'foo', 'type': 'and'}
-        executive = 1 # TODO
+        executive = Executive.Executive()
         parent = 2 # TODO
-        trigger = Trigger.TriggerFactory.NewTrigger(data,
-                                            executive,
-                                            parent,
-                                            Trigger.Trigger.FIRING)
+        trigger = Trigger.TriggerFactory.NewTrigger(
+                data, executive, parent, Trigger.Trigger.FIRING)
 
     def testOrTrigger(self):
         print '\n----- testOrTrigger -----'
         data = { 'name': 'foo', 'type': 'or'}
-        executive = 1 # TODO
+        executive = Executive.Executive()
         parent = 2 # TODO
-        trigger = Trigger.TriggerFactory.NewTrigger(data,
-                                            executive,
-                                            parent,
-                                            Trigger.Trigger.DEFIRING)
+        trigger = Trigger.TriggerFactory.NewTrigger(
+                data, executive, parent, Trigger.Trigger.DEFIRING)
 
     def testNotTrigger(self):
         print '\n----- testNotTrigger -----'
         data = { 'name': 'foo', 'type': 'not'}
-        executive = 1 # TODO
+        executive = Executive.Executive()
         parent = 2 # TODO
-        trigger = Trigger.TriggerFactory.NewTrigger(data,
-                                            executive,
-                                            parent,
-                                            Trigger.Trigger.FIRING)
+        trigger = Trigger.TriggerFactory.NewTrigger(
+                data, executive, parent, Trigger.Trigger.FIRING)
 
+    # TODO: invalid trigger
 
 if __name__ == '__main__':
     unittest.main()  # runs all tests
