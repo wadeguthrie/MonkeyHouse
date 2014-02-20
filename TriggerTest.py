@@ -27,7 +27,7 @@ class TriggerTestCase(unittest.TestCase):
         data = {
           'name': 'foo', 
           'type': 'message',
-          'template': 1 # TODO
+          'template': {"foo": 1} # TODO
         }
         executive = Executive.Executive()
         parent = 2 # TODO

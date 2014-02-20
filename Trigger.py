@@ -1,5 +1,7 @@
 #! /usr/bin/python
 
+import re
+
 import MessageHandlerInterface
 
 
@@ -57,36 +59,156 @@ class Trigger(object): # MessageHandlerInterface):
     def is_triggered(self):
         return self.__triggered
 
-    # TODO: trigger this manually
     def on_message(self, message):
+        # TODO: operation: arm
+        # TODO: operation: trigger
         pass
 
+    def _set_trigger(self, triggered):
+        if self.__triggered != triggered:
+            self.__triggered = triggered
+            self.__parent.on_trigger_change(self.__triggered)
+            self.executive.log()  # TODO: format of the log
 
+# For matching messages
+
+# TODO: unittest: each of the operators and an illegal operator
+class TemplateFactory(object):
+    re_le = re.compile('<=(.*)')
+    re_lt = re.compile('<(.*)')
+    re_ge = re.compile('>=(.*)')
+    re_gt = re.compile('>(.*)')
+    re_eq = re.compile('==(.*)')
+    @staticmethod
+    def NewTemplate(template):
+        # This will probably never happen as there's no way to express 'None'
+        # in the JSON.  Instead, we'll get there via an empty array.
+        if template is None:
+            return None
+
+        if isinstance(template, list):
+            if len(template) == 0:
+                return None
+            template = ArrayTemplate()
+            for element in template:
+                template.Add(TemplateFactory.NewTemplate(element))
+            return template
+
+        if not isinstance(template, str):
+            return Equals(template)
+
+        match = TemplateFactory.re_le.match(template)
+        if match:
+            return LessThanOrEqual(match.group(1))
+
+        match = TemplateFactory.re_lt.match(template)
+        if match:
+            return LessThan(match.group(1))
+
+        match = TemplateFactory.re_ge.match(template)
+        if match:
+            return GreaterThanOrEqual(match.group(1))
+
+        match = TemplateFactory.re_gt.match(template)
+        if match:
+            return GreaterThan(match.group(1))
+
+        match = TemplateFactory.re_eq.match(template)
+        if match:
+            return Equals(match.group(1))
+
+        return Equals(template)
+
+class Template(object):
+    def matches(self, value):
+        return False
+
+class LessThan(Template):
+    def __init__(self, operand):
+        self.__operand = operand
+
+    def matches(self, value):
+        return True if value < self.operand else False
+
+
+class LessThanOrEqual(Template):
+    def __init__(self, operand):
+        self.__operand = operand
+
+    def matches(self, value):
+        return True if value <= self.operand else False
+
+
+class GreaterThan(Template):
+    def __init__(self, operand):
+        self.__operand = operand
+
+    def matches(self, value):
+        return True if value > self.operand else False
+
+
+class GreaterThanOrEqual(Template):
+    def __init__(self, operand):
+        self.__operand = operand
+
+    def matches(self, value):
+        return True if value >= self.operand else False
+
+
+class Equals(Template):
+    def __init__(self, operand):
+        self.__operand = operand
+
+    def matches(self, value):
+        return True if value == self.operand else False
+
+
+class ArrayTemplate(Template):
+    def __init__(self):
+        self.__templates = []
+
+    def add(self, tempalte):
+        self.__templates.append(template)
+
+    # If any template matches, this template matches
+    def matches(self, value):
+        for template in self.__templates:
+            if template.matches(value):
+                return True
+        return False
+
+
+# TODO: unittest: 'template' not in data
 class MessageTrigger(Trigger):
     def __init__(self, data, executive, parent, trigger_type):
         super(MessageTrigger, self).__init__(data, executive, parent,
                                              trigger_type)
         print 'MessageTrigger ctor'
-        self.__template = data['template']
+        self.__template = {}
+        for key in data['template']:
+            self.__template[key] = TemplateFactory.NewTemplate(data['template'][key])
 
     def on_message(self, message):
-        # TODO: This method matches the method against template (described,
-        # below) to determine whether the incoming Message triggers,
-        # de-triggers, or does nothing. If on_message changes the state of
-        # the MessageTrigger, it logs and calls the parent's
-        # on_trigger_change method.
+        pending_none = False  # A message with a key that matches 'None' isn't
+                              # a deactivated trigger until all other keys
+                              # match.
+        for key in self.__template:
+            if self.__template[key] is None:
+                if key in message:
+                    pending_none = True
+            if key not in message:
+                # Message is not applicable, return without altering the
+                # trigger.
+                return
+            if not self.__template[key].matches(message[key]):
+                self._set_trigger(triggered=False)
+                return
 
-        # If:
-        # a field exists in the template but is set to None, the message
-        #   must not have the field,
-        # a field exists in the template and has a value, the message must
-        #   match the value -- the value may be preceded by '=', '<', or '>'
-        #   to indicate that the template matches if the incoming message's
-        #   field is equal to, less than, or greater than the indicated value,
-        # a field exists in the template and has an array as its value, the
-        #   message may match any of the values in the array,
-        # a field does not exist in the template, the message matches.
-        pass
+        if pending_none:
+            self._set_trigger(triggered=False)
+        else:
+            self._set_trigger(triggered=True)
+        return
 
 
 class TimerTrigger(Trigger):
