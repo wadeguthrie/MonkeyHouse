@@ -245,7 +245,7 @@ class DictTemplate(Template):
                 print 'Dict: %r: does not apply' % key
                 return MessageTrigger.DOESNT_APPLY
             match = self.__template[key].matches(value[key])
-            print 'Dict: match is %r' % match
+            print 'Dict: match is "%s"' % MessageTrigger.matches_str[match]
             if match == MessageTrigger.DOESNT_MATCH:
                 print 'DICT[%r]: NO' % key
                 return MessageTrigger.DOESNT_MATCH
@@ -263,6 +263,9 @@ class DictTemplate(Template):
 # TODO: unittest: 'template' not in data
 class MessageTrigger(Trigger):
     (MATCHES, DOESNT_MATCH, DOESNT_APPLY) = range(3)
+    matches_str = {MATCHES: 'matches',
+                   DOESNT_MATCH: 'does not match',
+                   DOESNT_APPLY: 'does not apply'}
 
     def __init__(self, data, executive, parent, trigger_type):
         super(MessageTrigger, self).__init__(data, executive, parent,

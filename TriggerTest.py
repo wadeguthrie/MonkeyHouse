@@ -39,11 +39,23 @@ class TriggerTestCase(unittest.TestCase):
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
-        trigger.on_message({"from": "groucho",
-                            "to": "curly"})
+
+        trigger.on_message({'from': 'groucho',
+                            'to': 'curly',
+                            'what': 'ever'})
         assert not trigger.is_triggered()
-        trigger.on_message({"from": "groucho",
-                            "to": "harpo"})
+
+        trigger.on_message({'from': 'groucho',
+                            'what': 'ever'}) # Should change nothing
+        assert not trigger.is_triggered()
+
+        trigger.on_message({'from': 'groucho',
+                            'to': 'harpo',
+                            'what': 'ever'})
+        assert trigger.is_triggered()
+
+        trigger.on_message({'from': 'groucho',
+                            'what': 'ever'}) # Should change nothing
         assert trigger.is_triggered()
 
 
