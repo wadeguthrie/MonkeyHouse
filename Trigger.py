@@ -86,13 +86,13 @@ class TemplateFactory(object):
         if template is None:
             return None
 
+        if isinstance(template, dict):
+            return DictTemplate(template)
+
         if isinstance(template, list):
             if len(template) == 0:
                 return None
-            template = ArrayTemplate()
-            for element in template:
-                template.Add(TemplateFactory.NewTemplate(element))
-            return template
+            return ArrayTemplate(template)
 
         if not isinstance(template, str):
             return Equals(template)
@@ -128,7 +128,9 @@ class LessThan(Template):
         self.__operand = operand
 
     def matches(self, value):
-        return True if value < self.operand else False
+        if value < self.operand:
+            return MessageTrigger.MATCHES
+        MessageTrigger.DOESNT_MATCH
 
 
 class LessThanOrEqual(Template):
@@ -136,7 +138,9 @@ class LessThanOrEqual(Template):
         self.__operand = operand
 
     def matches(self, value):
-        return True if value <= self.operand else False
+        if value <= self.operand:
+            return MessageTrigger.MATCHES
+        MessageTrigger.DOESNT_MATCH
 
 
 class GreaterThan(Template):
@@ -144,7 +148,9 @@ class GreaterThan(Template):
         self.__operand = operand
 
     def matches(self, value):
-        return True if value > self.operand else False
+        if value > self.operand:
+            return MessageTrigger.MATCHES
+        MessageTrigger.DOESNT_MATCH
 
 
 class GreaterThanOrEqual(Template):
@@ -152,7 +158,9 @@ class GreaterThanOrEqual(Template):
         self.__operand = operand
 
     def matches(self, value):
-        return True if value >= self.operand else False
+        if value >= self.operand:
+            return MessageTrigger.MATCHES
+        MessageTrigger.DOESNT_MATCH
 
 
 class Equals(Template):
@@ -160,35 +168,32 @@ class Equals(Template):
         self.__operand = operand
 
     def matches(self, value):
-        return True if value == self.operand else False
+        if value == self.operand:
+            return MessageTrigger.MATCHES
+        MessageTrigger.DOESNT_MATCH
 
 
 class ArrayTemplate(Template):
-    def __init__(self):
+    def __init__(self, template):
         self.__templates = []
-
-    def add(self, tempalte):
-        self.__templates.append(template)
+        for element in template:
+            self.__templates.append(TemplateFactory.NewTemplate(element))
 
     # If any template matches, this template matches
     def matches(self, value):
         for template in self.__templates:
-            if template.matches(value):
-                return True
-        return False
+            if template.matches(value) == MessageTrigger.MATCHES:
+                return MessageTrigger.MATCHES
+        return MessageTrigger.DOESNT_MATCH
 
 
-# TODO: unittest: 'template' not in data
-class MessageTrigger(Trigger):
-    def __init__(self, data, executive, parent, trigger_type):
-        super(MessageTrigger, self).__init__(data, executive, parent,
-                                             trigger_type)
-        print 'MessageTrigger ctor'
+class DictTemplate(Template):
+    def __init__(self, template):
         self.__template = {}
-        for key in data['template']:
-            self.__template[key] = TemplateFactory.NewTemplate(data['template'][key])
+        for key in template:
+            self.__template[key] = TemplateFactory.NewTemplate(element)
 
-    def on_message(self, message):
+    def matches(self, value):
         pending_none = False  # A message with a key that matches 'None' isn't
                               # a deactivated trigger until all other keys
                               # match.
@@ -199,18 +204,47 @@ class MessageTrigger(Trigger):
             if key not in message:
                 # Message is not applicable, return without altering the
                 # trigger.
-                return
-            if not self.__template[key].matches(message[key]):
-                self._set_trigger(triggered=False)
-                return
+                return MessageTrigger.DOESNT_APPLY
+            match = self.__template[key].matches(message[key])
+            if match == MessageTrigger.DOESNT_MATCH:
+                return MessageTrigger.DOESNT_MATCH
+            if match == MessageTrigger.DOESNT_APPLY:
+                return MessageTrigger.DOESNT_APPLY
 
         if pending_none:
-            self._set_trigger(triggered=False)
-        else:
+            return MessageTrigger.DOESNT_MATCH
+        return MessageTrigger.MATCHES
+
+
+# TODO: unittest: 'template' not in data
+class MessageTrigger(Trigger):
+    (MATCHES, DOESNT_MATCH, DOESNT_APPLY) = range(3)
+
+    def __init__(self, data, executive, parent, trigger_type):
+        super(MessageTrigger, self).__init__(data, executive, parent,
+                                             trigger_type)
+        print 'MessageTrigger ctor'
+        self.__template = {}
+        for key in data['template']:
+            self.__template[key] = TemplateFactory.NewTemplate(
+                    data['template'][key])
+
+    def on_message(self, message):
+        match = self.__template.matches(message)
+        if match == MessageTrigger.MATCHES:
             self._set_trigger(triggered=True)
+        elif match == MessageTrigger.DOESNT_MATCH:
+            self._set_trigger(triggered=False)
         return
 
 
+# TODO: time template looks like: [anchor][+increment] where 'anchor' is a
+# time/date with, possibly, items missing and 'increment' is a number and a
+# time element (e.g., week, months, minutes -- note singular and plural).  The
+# anchor is the initial time for the trigger and the increment is added for
+# subsequent times.  Without the increment, just match the next missing value
+# in 'anchor'.  Without 'anchor', the initial time is 'Now+increment'.  An
+# empty string means 'Now'.  Note, 'elapsed time' is no longer necessary.
 class TimerTrigger(Trigger):
     def __init__(self, data, executive, parent, trigger_type):
         super(TimerTrigger, self).__init__(data, executive, parent,
