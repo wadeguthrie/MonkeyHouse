@@ -4,6 +4,10 @@ import re
 
 import MessageHandlerInterface
 
+# TODO: Next: mock the Executive and the Parent in the test
+# TODO: Then: Include the message test in the user's guide
+# TODO: After: Draw-up arrays in the incoming message
+# TODO: Later: Test leading '\'
 
 class TriggerFactory(object):
     __factory = {
@@ -73,14 +77,13 @@ class Trigger(object): # MessageHandlerInterface):
 
 # For matching messages
 
-# TODO: unittest: each of the operators and an illegal operator
 class TemplateFactory(object):
+    re_slash = re.compile(r'\\(.*)')
     re_le = re.compile(r'<=(.*)')
     re_lt = re.compile(r'<(.*)')
     re_ge = re.compile(r'>=(.*)')
     re_gt = re.compile(r'>(.*)')
     re_eq = re.compile(r'==(.*)')
-    # TODO: remove a leading '\'
     @staticmethod
     def NewTemplate(template):
         # This will probably never happen as there's no way to express 'None'
@@ -98,6 +101,11 @@ class TemplateFactory(object):
 
         if not isinstance(template, str):
             return Equals(template)
+
+        # Allow leading slash to quote [<>=] chars.
+        match = TemplateFactory.re_slash.match(template)
+        if match:
+            return Equals(match.group(1))
 
         match = TemplateFactory.re_le.match(template)
         if match:
@@ -145,7 +153,6 @@ class LessThan(Template):
 
     def matches(self, value):
         print 'LT: value=%r template=%r' % (value, self.__operand)
-        # TODO: should I check for a decimal point?
         if Template._value(value) < Template._value(self.__operand):
             print 'LT: YES'
             return MessageTrigger.MATCHES
@@ -239,6 +246,7 @@ class DictTemplate(Template):
                 print 'Dict: None'
                 if key in value:
                     pending_none = key
+                continue
             if key not in value:
                 # Message is not applicable, return without altering the
                 # trigger.

@@ -10,7 +10,7 @@ import Trigger
 
 class ParentFake(object):
     def on_trigger_change(self, firing, triggered):
-        pass
+        pass  # TODO: this should be a mock
 
 class TriggerTestCase(unittest.TestCase):
 
@@ -31,8 +31,7 @@ class TriggerTestCase(unittest.TestCase):
         data = {
           'name': 'foo', 
           'type': 'message',
-          'template': {"from": "groucho",
-                       "to": "harpo"} # TODO
+          'template': {"from": "groucho", "to": "harpo"}
         }
         executive = Executive.Executive()
         parent = ParentFake()
@@ -41,22 +40,58 @@ class TriggerTestCase(unittest.TestCase):
         assert not trigger.is_triggered()
 
         trigger.on_message({'from': 'groucho',
-                            'to': 'curly',
-                            'what': 'ever'})
-        assert not trigger.is_triggered()
+                            'to': 'harpo',
+                            'what': 'IRRELEVANT-VALUE'})  # Should match.
+        assert trigger.is_triggered()  # TODO: test activation
 
         trigger.on_message({'from': 'groucho',
-                            'what': 'ever'}) # Should change nothing
-        assert not trigger.is_triggered()
+                            'to': 'BAD-VALUE',
+                            'what': 'IRRELEVANT-VALUE'})  # Bad 'to'.
+        assert not trigger.is_triggered()  # TODO: test de-activation
+
+        # Should change nothing.
+        trigger.on_message({'from': 'groucho',
+                            'what': 'IRRELEVANT-VALUE'})  # Missing 'to'.
+        assert not trigger.is_triggered()  # TODO: test NO de-activation
 
         trigger.on_message({'from': 'groucho',
                             'to': 'harpo',
-                            'what': 'ever'})
-        assert trigger.is_triggered()
+                            'what': 'IRRELEVANT-VALUE'})  # Should match.
+        assert trigger.is_triggered()  # TODO: test activation
+
+        # Should change nothing.
+        trigger.on_message({'from': 'groucho',
+                            'what': 'IRRELEVEANT-VALUE'}) # Missing 'to'.
+        assert trigger.is_triggered()  # TODO: test NO activation
+
+
+    def testMessageTriggerNone(self):
+        print '\n----- testMessageTriggerNone -----'
+        # Tests '[]' as an expression of 'None'.
+        data = {
+          'name': 'foo', 
+          'type': 'message',
+          'template': {'from': 'groucho', 'what': [], 'to': 'harpo'}
+        }
+        executive = Executive.Executive()
+        parent = ParentFake()
+        trigger = Trigger.TriggerFactory.NewTrigger(
+                data, executive, parent, Trigger.Trigger.FIRING)
+        assert not trigger.is_triggered()
 
         trigger.on_message({'from': 'groucho',
-                            'what': 'ever'}) # Should change nothing
-        assert trigger.is_triggered()
+                            'to': 'harpo'})  # Should match.
+        assert trigger.is_triggered()  # TODO: test activation
+
+        trigger.on_message({'from': 'groucho',
+                            'to': 'harpo',
+                            'what': 'ever'})  # Should disqualify
+        assert not trigger.is_triggered()  # TODO: test de-activation
+
+        trigger.on_message({'from': 'groucho',
+                            'to': 'harpo',
+                            'foo': 'IRRELEVANT-VALUE'})  # Should activate.
+        assert trigger.is_triggered()  # TODO: test activation
 
 
     def testMessageTriggerNumeric(self):
@@ -74,13 +109,13 @@ class TriggerTestCase(unittest.TestCase):
         assert not trigger.is_triggered()
 
         trigger.on_message({"from": "groucho", "foo": 1})
-        assert not trigger.is_triggered()
+        assert not trigger.is_triggered()  # TODO: test de-activation
 
         trigger.on_message({"from": "groucho", "foo": 3})
-        assert not trigger.is_triggered()
+        assert not trigger.is_triggered()  # TODO: test de-activation
 
         trigger.on_message({"from": "groucho", "foo": 4})
-        assert trigger.is_triggered()
+        assert trigger.is_triggered()  # TODO: test activation
 
     def testMessageTriggerArray(self):
         print '\n----- testMessageTriggerArray -----'
@@ -94,22 +129,53 @@ class TriggerTestCase(unittest.TestCase):
         parent = ParentFake()
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING)
-        assert not trigger.is_triggered()
+        assert not trigger.is_triggered()  # TODO: test de-activation
 
         trigger.on_message({"from": "groucho", "foo": 1})
-        assert trigger.is_triggered()
+        assert trigger.is_triggered()  # TODO: test activation
 
         trigger.on_message({"from": "groucho", "foo": 4})
-        assert not trigger.is_triggered()
+        assert not trigger.is_triggered()  # TODO: test de-activation
 
         trigger.on_message({"from": "groucho", "foo": 7})
-        assert trigger.is_triggered()
+        assert trigger.is_triggered()  # TODO: test activation
 
         trigger.on_message({"from": "groucho", "foo": 10})
-        assert not trigger.is_triggered()
+        assert not trigger.is_triggered()  # TODO: test de-activation
 
         trigger.on_message({"from": "groucho", "foo": 15})
-        assert trigger.is_triggered()
+        assert trigger.is_triggered()  # TODO: test activation
+
+    def testMessageTriggerDict(self):
+        print '\n----- testMessageTriggerDict -----'
+        data = {
+          'name': 'foo', 
+          'type': 'message',
+          'template': {'from': 'the_switch',
+                       'announce_state': {'value': 'on'}}
+        }
+        executive = Executive.Executive()
+        parent = ParentFake()
+        trigger = Trigger.TriggerFactory.NewTrigger(
+                data, executive, parent, Trigger.Trigger.FIRING)
+        assert not trigger.is_triggered()
+
+        trigger.on_message({'from': 'the_switch',
+                            'announce_state': {'value': 'on'}})  # Should match.
+        assert trigger.is_triggered()  # TODO: test activation
+
+        trigger.on_message({'from': 'the_switch',
+                            'set_state': {'value': 'on'}})  # Should change nothing.
+        assert trigger.is_triggered()  # TODO: test NO activation
+
+        trigger.on_message({'from': 'the_switch',
+                            'announce_state': {'value': 'off'}})  # Should match.
+        assert not trigger.is_triggered()  # TODO: test activation
+
+        trigger.on_message({'from': 'the_switch',
+                            'set_state': {'value': 'off'}})  # Should change nothing.
+        assert not trigger.is_triggered()  # TODO: test NO de-activation
+
 
     def testTimerTrigger(self):
         print '\n----- testTimerTrigger -----'
