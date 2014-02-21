@@ -8,6 +8,9 @@ import unittest
 import Executive  # TODO: Mock
 import Trigger
 
+class ParentFake(object):
+    def on_trigger_change(self, firing, triggered):
+        pass
 
 class TriggerTestCase(unittest.TestCase):
 
@@ -27,12 +30,20 @@ class TriggerTestCase(unittest.TestCase):
         data = {
           'name': 'foo', 
           'type': 'message',
-          'template': {"foo": 1} # TODO
+          'template': {"from": "groucho",
+                       "to": "harpo"} # TODO
         }
         executive = Executive.Executive()
-        parent = 2 # TODO
+        parent = ParentFake()
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING)
+        assert not trigger.is_triggered()
+        trigger.on_message({"from": "groucho",
+                            "to": "curly"})
+        assert not trigger.is_triggered()
+        trigger.on_message({"from": "groucho",
+                            "to": "harpo"})
+        assert trigger.is_triggered()
 
     def testTimerTrigger(self):
         print '\n----- testTimerTrigger -----'

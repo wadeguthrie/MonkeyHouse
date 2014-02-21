@@ -20,9 +20,9 @@ class TriggerFactory(object):
             raise ValueError('No "type" in data')
         elif data['type'] in TriggerFactory.__factory:
             return TriggerFactory.__factory[data['type']](data,
-                                           executive,
-                                           parent,
-                                           trigger_type)
+                                                          executive,
+                                                          parent,
+                                                          trigger_type)
         else:
             raise ValueError('Trigger type "%s" not supported' % data['type'])
 
@@ -67,8 +67,9 @@ class Trigger(object): # MessageHandlerInterface):
     def _set_trigger(self, triggered):
         if self.__triggered != triggered:
             self.__triggered = triggered
-            self.__parent.on_trigger_change(self.__triggered)
-            self.executive.log()  # TODO: format of the log
+            self.__parent.on_trigger_change(self.__trigger_type,
+                                            self.__triggered)
+            #self.__executive.log()  # TODO: format of the log
 
 # For matching messages
 
@@ -128,9 +129,12 @@ class LessThan(Template):
         self.__operand = operand
 
     def matches(self, value):
-        if value < self.operand:
+        print 'LT: value=%r template=%r' % (value, self.__operand)
+        if value < self.__operand:
+            print 'YES'
             return MessageTrigger.MATCHES
-        MessageTrigger.DOESNT_MATCH
+        print 'NO'
+        return MessageTrigger.DOESNT_MATCH
 
 
 class LessThanOrEqual(Template):
@@ -138,9 +142,12 @@ class LessThanOrEqual(Template):
         self.__operand = operand
 
     def matches(self, value):
-        if value <= self.operand:
+        print 'LE: value=%r template=%r' % (value, self.__operand)
+        if value <= self.__operand:
+            print 'YES'
             return MessageTrigger.MATCHES
-        MessageTrigger.DOESNT_MATCH
+        print 'NO'
+        return MessageTrigger.DOESNT_MATCH
 
 
 class GreaterThan(Template):
@@ -148,9 +155,12 @@ class GreaterThan(Template):
         self.__operand = operand
 
     def matches(self, value):
-        if value > self.operand:
+        print 'GT: value=%r template=%r' % (value, self.__operand)
+        if value > self.__operand:
+            print 'YES'
             return MessageTrigger.MATCHES
-        MessageTrigger.DOESNT_MATCH
+        print 'NO'
+        return MessageTrigger.DOESNT_MATCH
 
 
 class GreaterThanOrEqual(Template):
@@ -158,9 +168,12 @@ class GreaterThanOrEqual(Template):
         self.__operand = operand
 
     def matches(self, value):
-        if value >= self.operand:
+        print 'GE: value=%r template=%r' % (value, self.__operand)
+        if value >= self.__operand:
+            print 'YES'
             return MessageTrigger.MATCHES
-        MessageTrigger.DOESNT_MATCH
+        print 'NO'
+        return MessageTrigger.DOESNT_MATCH
 
 
 class Equals(Template):
@@ -168,9 +181,12 @@ class Equals(Template):
         self.__operand = operand
 
     def matches(self, value):
-        if value == self.operand:
+        print 'Equals: value=%r template=%r' % (value, self.__operand)
+        if value == self.__operand:
+            print 'YES'
             return MessageTrigger.MATCHES
-        MessageTrigger.DOESNT_MATCH
+        print 'NO'
+        return MessageTrigger.DOESNT_MATCH
 
 
 class ArrayTemplate(Template):
@@ -181,8 +197,10 @@ class ArrayTemplate(Template):
 
     # If any template matches, this template matches
     def matches(self, value):
+        print "Array: value=%r, template=%r" % (value, self.__templates)
         for template in self.__templates:
             if template.matches(value) == MessageTrigger.MATCHES:
+                print '%r: matches' % template
                 return MessageTrigger.MATCHES
         return MessageTrigger.DOESNT_MATCH
 
@@ -191,28 +209,37 @@ class DictTemplate(Template):
     def __init__(self, template):
         self.__template = {}
         for key in template:
-            self.__template[key] = TemplateFactory.NewTemplate(element)
+            self.__template[key] = TemplateFactory.NewTemplate(template[key])
 
     def matches(self, value):
+        print "Dict: value=%r, template=%r" % (value, self.__template)
         pending_none = False  # A message with a key that matches 'None' isn't
                               # a deactivated trigger until all other keys
                               # match.
         for key in self.__template:
+            print '>>> Check %r' % key
             if self.__template[key] is None:
-                if key in message:
+                print 'Dict: None'
+                if key in value:
                     pending_none = True
-            if key not in message:
+            if key not in value:
                 # Message is not applicable, return without altering the
                 # trigger.
+                print 'Dict: %r: does not apply' % key
                 return MessageTrigger.DOESNT_APPLY
-            match = self.__template[key].matches(message[key])
+            match = self.__template[key].matches(value[key])
+            print 'Dict: match is %r' % match
             if match == MessageTrigger.DOESNT_MATCH:
+                print 'Dict: %r: does not match' % key
                 return MessageTrigger.DOESNT_MATCH
             if match == MessageTrigger.DOESNT_APPLY:
+                print 'Dict: %r: does not apply (2)' % key
                 return MessageTrigger.DOESNT_APPLY
 
         if pending_none:
+            print 'Dict: <None>: does not match' % key
             return MessageTrigger.DOESNT_MATCH
+        print 'Dict: YES'
         return MessageTrigger.MATCHES
 
 
@@ -224,12 +251,10 @@ class MessageTrigger(Trigger):
         super(MessageTrigger, self).__init__(data, executive, parent,
                                              trigger_type)
         print 'MessageTrigger ctor'
-        self.__template = {}
-        for key in data['template']:
-            self.__template[key] = TemplateFactory.NewTemplate(
-                    data['template'][key])
+        self.__template = TemplateFactory.NewTemplate(data['template'])
 
     def on_message(self, message):
+        print '===== on_message(%r) =====' % message
         match = self.__template.matches(message)
         if match == MessageTrigger.MATCHES:
             self._set_trigger(triggered=True)
