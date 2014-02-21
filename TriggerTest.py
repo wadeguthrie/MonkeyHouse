@@ -25,6 +25,7 @@ class TriggerTestCase(unittest.TestCase):
         """
         super(TriggerTestCase, self).__init__(*args, **kwargs)
 
+
     def testMessageTrigger(self):
         print '\n----- testMessageTrigger -----'
         data = {
@@ -43,6 +44,59 @@ class TriggerTestCase(unittest.TestCase):
         assert not trigger.is_triggered()
         trigger.on_message({"from": "groucho",
                             "to": "harpo"})
+        assert trigger.is_triggered()
+
+
+    def testMessageTriggerNumeric(self):
+        print '\n----- testMessageTriggerNumeric -----'
+        data = {
+          'name': 'foo', 
+          'type': 'message',
+          'template': {"from": "groucho",
+                       "foo": ">3"}
+        }
+        executive = Executive.Executive()
+        parent = ParentFake()
+        trigger = Trigger.TriggerFactory.NewTrigger(
+                data, executive, parent, Trigger.Trigger.FIRING)
+        assert not trigger.is_triggered()
+
+        trigger.on_message({"from": "groucho", "foo": 1})
+        assert not trigger.is_triggered()
+
+        trigger.on_message({"from": "groucho", "foo": 3})
+        assert not trigger.is_triggered()
+
+        trigger.on_message({"from": "groucho", "foo": 4})
+        assert trigger.is_triggered()
+
+    def testMessageTriggerArray(self):
+        print '\n----- testMessageTriggerArray -----'
+        data = {
+          'name': 'foo', 
+          'type': 'message',
+          'template': {'from': 'groucho',
+                       'foo': ['<3', '==7', '>12']}
+        }
+        executive = Executive.Executive()
+        parent = ParentFake()
+        trigger = Trigger.TriggerFactory.NewTrigger(
+                data, executive, parent, Trigger.Trigger.FIRING)
+        assert not trigger.is_triggered()
+
+        trigger.on_message({"from": "groucho", "foo": 1})
+        assert trigger.is_triggered()
+
+        trigger.on_message({"from": "groucho", "foo": 4})
+        assert not trigger.is_triggered()
+
+        trigger.on_message({"from": "groucho", "foo": 7})
+        assert trigger.is_triggered()
+
+        trigger.on_message({"from": "groucho", "foo": 10})
+        assert not trigger.is_triggered()
+
+        trigger.on_message({"from": "groucho", "foo": 15})
         assert trigger.is_triggered()
 
     def testTimerTrigger(self):

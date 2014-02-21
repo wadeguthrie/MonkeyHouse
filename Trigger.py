@@ -75,11 +75,12 @@ class Trigger(object): # MessageHandlerInterface):
 
 # TODO: unittest: each of the operators and an illegal operator
 class TemplateFactory(object):
-    re_le = re.compile('<=(.*)')
-    re_lt = re.compile('<(.*)')
-    re_ge = re.compile('>=(.*)')
-    re_gt = re.compile('>(.*)')
-    re_eq = re.compile('==(.*)')
+    re_le = re.compile(r'<=(.*)')
+    re_lt = re.compile(r'<(.*)')
+    re_ge = re.compile(r'>=(.*)')
+    re_gt = re.compile(r'>(.*)')
+    re_eq = re.compile(r'==(.*)')
+    # TODO: remove a leading '\'
     @staticmethod
     def NewTemplate(template):
         # This will probably never happen as there's no way to express 'None'
@@ -124,16 +125,31 @@ class Template(object):
     def matches(self, value):
         return False
 
+    @staticmethod
+    def _value(string):
+        try:
+            f = float(string)
+            return f
+        except ValueError:
+            pass
+
+        try:
+            i = int(string)
+            return i
+        except ValueError:
+            return string
+
 class LessThan(Template):
     def __init__(self, operand):
         self.__operand = operand
 
     def matches(self, value):
         print 'LT: value=%r template=%r' % (value, self.__operand)
-        if value < self.__operand:
-            print 'YES'
+        # TODO: should I check for a decimal point?
+        if Template._value(value) < Template._value(self.__operand):
+            print 'LT: YES'
             return MessageTrigger.MATCHES
-        print 'NO'
+        print 'LT: NO'
         return MessageTrigger.DOESNT_MATCH
 
 
@@ -143,10 +159,10 @@ class LessThanOrEqual(Template):
 
     def matches(self, value):
         print 'LE: value=%r template=%r' % (value, self.__operand)
-        if value <= self.__operand:
-            print 'YES'
+        if Template._value(value) <= Template._value(self.__operand):
+            print 'LE: YES'
             return MessageTrigger.MATCHES
-        print 'NO'
+        print 'LE: NO'
         return MessageTrigger.DOESNT_MATCH
 
 
@@ -156,10 +172,10 @@ class GreaterThan(Template):
 
     def matches(self, value):
         print 'GT: value=%r template=%r' % (value, self.__operand)
-        if value > self.__operand:
-            print 'YES'
+        if Template._value(value) > Template._value(self.__operand):
+            print 'GT: YES'
             return MessageTrigger.MATCHES
-        print 'NO'
+        print 'GT: NO'
         return MessageTrigger.DOESNT_MATCH
 
 
@@ -169,10 +185,10 @@ class GreaterThanOrEqual(Template):
 
     def matches(self, value):
         print 'GE: value=%r template=%r' % (value, self.__operand)
-        if value >= self.__operand:
-            print 'YES'
+        if Template._value(value) >= Template._value(self.__operand):
+            print 'GE: YES'
             return MessageTrigger.MATCHES
-        print 'NO'
+        print 'GE: NO'
         return MessageTrigger.DOESNT_MATCH
 
 
@@ -182,10 +198,10 @@ class Equals(Template):
 
     def matches(self, value):
         print 'Equals: value=%r template=%r' % (value, self.__operand)
-        if value == self.__operand:
-            print 'YES'
+        if Template._value(value) == Template._value(self.__operand):
+            print 'EQ: YES'
             return MessageTrigger.MATCHES
-        print 'NO'
+        print 'EQ: NO'
         return MessageTrigger.DOESNT_MATCH
 
 
@@ -200,8 +216,9 @@ class ArrayTemplate(Template):
         print "Array: value=%r, template=%r" % (value, self.__templates)
         for template in self.__templates:
             if template.matches(value) == MessageTrigger.MATCHES:
-                print '%r: matches' % template
+                print 'ARRAY[%r]: YES' % template
                 return MessageTrigger.MATCHES
+        print 'ARRAY: NO'
         return MessageTrigger.DOESNT_MATCH
 
 
@@ -213,15 +230,15 @@ class DictTemplate(Template):
 
     def matches(self, value):
         print "Dict: value=%r, template=%r" % (value, self.__template)
-        pending_none = False  # A message with a key that matches 'None' isn't
-                              # a deactivated trigger until all other keys
-                              # match.
+        pending_none = None  # A message with a key that matches 'None' isn't
+                             # a deactivated trigger until all other keys
+                             # match.
         for key in self.__template:
             print '>>> Check %r' % key
             if self.__template[key] is None:
                 print 'Dict: None'
                 if key in value:
-                    pending_none = True
+                    pending_none = key
             if key not in value:
                 # Message is not applicable, return without altering the
                 # trigger.
@@ -230,14 +247,14 @@ class DictTemplate(Template):
             match = self.__template[key].matches(value[key])
             print 'Dict: match is %r' % match
             if match == MessageTrigger.DOESNT_MATCH:
-                print 'Dict: %r: does not match' % key
+                print 'DICT[%r]: NO' % key
                 return MessageTrigger.DOESNT_MATCH
             if match == MessageTrigger.DOESNT_APPLY:
                 print 'Dict: %r: does not apply (2)' % key
                 return MessageTrigger.DOESNT_APPLY
 
-        if pending_none:
-            print 'Dict: <None>: does not match' % key
+        if pending_none is not None:
+            print 'DICT[%r=None]: NO' % key
             return MessageTrigger.DOESNT_MATCH
         print 'Dict: YES'
         return MessageTrigger.MATCHES
