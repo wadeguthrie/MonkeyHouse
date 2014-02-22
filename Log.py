@@ -22,13 +22,13 @@ class Log(object):
 
         executive = Executive()  # MonkeyHouse Executive.
 
-        with Log.Log(executive=executive,
-                     path='LogDirectory',
+        with Log.Log(path='LogDirectory',
                      max_bytes_per_file=20 * 1024 * 1024,
                      max_bytes_total=1024 * 1024 * 1024,
                      verbose=False) as log:
 
             # The whole program being logged is inside here.
+            log.set_executive(executive)
 
             log.log(Log.Log.INFO,
                     Log.Log.USER_INPUT,
@@ -39,14 +39,14 @@ class Log(object):
     (ERROR, WARNING, INFO) = range(3)
 
     # Reason values for calls to |log|.
-    (TRIGGER_ACTIVATE, RULE_FIRE, HARDWARE_COMMUNICATION,
+    (TRIGGER, RULE_FIRE, HARDWARE_COMMUNICATION,
         REMOTE_NODE_COMMUNICATION, TARGRT_INPUT, USER_INPUT, ERROR,
         STATE, OTHER) = range(9)
 
     __severity_str = {ERROR: 'error',
                       WARNING: 'warning',
                       INFO: 'info'}
-    __type_str = {TRIGGER_ACTIVATE: 'trigger_activate',
+    __type_str = {TRIGGER: 'trigger',
                   RULE_FIRE: 'rule_fire',
                   HARDWARE_COMMUNICATION: 'hardware_communication',
                   REMOTE_NODE_COMMUNICATION: 'remote_node_communication',
@@ -59,11 +59,10 @@ class Log(object):
 
     # Constructor and context manager methods.
 
-    def __init__(self, executive, path, max_bytes_per_file, max_bytes_total,
+    def __init__(self, path, max_bytes_per_file, max_bytes_total,
                  verbose=False):
         """ Initialize the Log.
 
-            executive (Executive) - Used to retrieve current status.
             path (string) - Directory to hold the log files.
             max_bytes_per_file (int) - Close the log file of this size and
                 open a new one.
@@ -73,7 +72,7 @@ class Log(object):
 
         """
 
-        self.executive = executive
+        self.__executive = None
         self.log_path = path  # Directory that contains the log files.
         self.max_bytes_per_file = max_bytes_per_file
         self.max_bytes_total = max_bytes_total
@@ -191,6 +190,14 @@ class Log(object):
                 print 'Removed %s (%d bytes) to get %d bytes' % (
                     filepath, oldest_bytes, self.bytes_total)
 
+    def set_executive(self, executive):
+        """ Sets the executive for the log.
+
+            executive (Executive) - Used to retrieve current status.
+
+        """
+        self.__executive = executive
+
     # Private methods.
 
     def __open_new_log_file(self, now):
@@ -218,7 +225,7 @@ class Log(object):
         state = '"%s": {"time": "%s", "state": %s},\n"entries" : [\n' % (
                 self.__type_str[self.STATE],
                 datetime.datetime.strftime(now, Log.__date_format),
-                json.dumps(self.executive.get_state(), indent=2))
+                json.dumps(self.__executive.get_state(), indent=2))
         self.__write_to_file(state)
 
         self.first_entry = True

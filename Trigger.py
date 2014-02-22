@@ -2,9 +2,9 @@
 
 import re
 
+import Log
 import MessageHandlerInterface
 
-# TODO: Next: mock the Executive and the Parent in the test
 # TODO: Then: Include the message test in the user's guide
 # TODO: After: Draw-up arrays in the incoming message
 # TODO: Later: Test leading '\'
@@ -73,7 +73,14 @@ class Trigger(object): # MessageHandlerInterface):
             self.__triggered = triggered
             self.__parent.on_trigger_change(self.__trigger_type,
                                             self.__triggered)
-            #self.__executive.log()  # TODO: format of the log
+            self.__executive.log.log(Log.Log.INFO,
+                                     Log.Log.TRIGGER,
+                                     {'type': 'trigger',
+                                      'name': self.__name,
+                                      'trigger': 'activated' if triggered else
+                                        'deactivated',
+                                      'type': self.__trigger_type_str[
+                                          self.__trigger_type]})
 
 # For matching messages
 

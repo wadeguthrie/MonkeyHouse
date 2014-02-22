@@ -54,7 +54,6 @@ class LogTestCase(unittest.TestCase):
                 exist from previous tests plus the current test.
 
         """
-        executive = Executive.Executive()
         beyond_max_entry = self.counter + entry_count
 
         if clean_start and os.path.exists(self.LOG_PATH):
@@ -62,11 +61,12 @@ class LogTestCase(unittest.TestCase):
 
         # Add |entry_count| messages to the log.
 
-        with Log.Log(executive=executive,
-                     path=self.LOG_PATH,
+        with Log.Log(path=self.LOG_PATH,
                      max_bytes_per_file=LogTestCase.MAX_BYTES_FILE,
                      max_bytes_total=LogTestCase.MAX_BYTES_TOTAL,
                      verbose=False) as log:
+            executive = Executive.Executive(log)
+            log.set_executive(executive)
             while self.counter < beyond_max_entry:
                 log.log(Log.Log.INFO, Log.Log.USER_INPUT, {"value":
                                                            self.counter})

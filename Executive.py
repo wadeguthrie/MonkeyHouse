@@ -10,10 +10,11 @@ class Executive(object):
                    OPERATING: 'operating',
                    SUSPENDED_OPERATION: 'suspended_operation'}
 
-    def __init__(self):
+    def __init__(self, log):
         self.state = self.INITIALIZING
         self.__targets = []
         self.__bridges = []
+        self.log = log
 
     def get_state(self):
         state = {

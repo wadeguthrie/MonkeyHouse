@@ -1,12 +1,15 @@
 #! /usr/bin/python
 
 import json
+import mock
 import os
 import shutil
 import unittest
 
-import Executive  # TODO: Mock
+import Executive
+import Log
 import Trigger
+
 
 class ParentFake(object):
     def on_trigger_change(self, firing, triggered):
@@ -33,36 +36,68 @@ class TriggerTestCase(unittest.TestCase):
           'type': 'message',
           'template': {"from": "groucho", "to": "harpo"}
         }
-        executive = Executive.Executive()
+
+        log = Log.Log(path="BogusPath",
+                      max_bytes_per_file=0,
+                      max_bytes_total=0,
+                      verbose=False)
+        log.log = mock.MagicMock()
+        executive = Executive.Executive(log)
         parent = ParentFake()
+        parent.on_trigger_change = mock.MagicMock()
+
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
 
+        # Simple match with one irrelevant element should activate.
         trigger.on_message({'from': 'groucho',
                             'to': 'harpo',
-                            'what': 'IRRELEVANT-VALUE'})  # Should match.
-        assert trigger.is_triggered()  # TODO: test activation
+                            'what': 'IRRELEVANT-VALUE'})
+        assert trigger.is_triggered()
+        assert log.log.call_count == 1
+        parent.on_trigger_change.assert_called_once_with(
+                Trigger.Trigger.FIRING, True)
 
+        # A bad match should deactivate.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
         trigger.on_message({'from': 'groucho',
                             'to': 'BAD-VALUE',
-                            'what': 'IRRELEVANT-VALUE'})  # Bad 'to'.
-        assert not trigger.is_triggered()  # TODO: test de-activation
+                            'what': 'IRRELEVANT-VALUE'})
+        assert not trigger.is_triggered()
+        assert log.log.call_count == 1
+        parent.on_trigger_change.assert_called_once_with(
+                Trigger.Trigger.FIRING, False)
 
-        # Should change nothing.
+        # Missing element ('to') should not trigger.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
         trigger.on_message({'from': 'groucho',
-                            'what': 'IRRELEVANT-VALUE'})  # Missing 'to'.
-        assert not trigger.is_triggered()  # TODO: test NO de-activation
+                            'what': 'IRRELEVANT-VALUE'})
+        assert not trigger.is_triggered()
+        assert log.log.call_count == 0
+        assert parent.on_trigger_change.call_count == 0
 
+        # Another simple match should activate.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
         trigger.on_message({'from': 'groucho',
                             'to': 'harpo',
-                            'what': 'IRRELEVANT-VALUE'})  # Should match.
-        assert trigger.is_triggered()  # TODO: test activation
+                            'what': 'IRRELEVANT-VALUE'})
+        assert trigger.is_triggered()
+        assert log.log.call_count == 1
+        parent.on_trigger_change.assert_called_once_with(
+                Trigger.Trigger.FIRING, True)
 
-        # Should change nothing.
+        # Another missing element ('to') should not activate.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
         trigger.on_message({'from': 'groucho',
                             'what': 'IRRELEVEANT-VALUE'}) # Missing 'to'.
-        assert trigger.is_triggered()  # TODO: test NO activation
+        assert trigger.is_triggered()
+        assert log.log.call_count == 0
+        assert parent.on_trigger_change.call_count == 0
 
 
     def testMessageTriggerNone(self):
@@ -73,7 +108,12 @@ class TriggerTestCase(unittest.TestCase):
           'type': 'message',
           'template': {'from': 'groucho', 'what': [], 'to': 'harpo'}
         }
-        executive = Executive.Executive()
+        log = Log.Log(path="BogusPath",
+                      max_bytes_per_file=0,
+                      max_bytes_total=0,
+                      verbose=False)
+        log.log = mock.MagicMock()
+        executive = Executive.Executive(log)
         parent = ParentFake()
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING)
@@ -102,7 +142,12 @@ class TriggerTestCase(unittest.TestCase):
           'template': {"from": "groucho",
                        "foo": ">3"}
         }
-        executive = Executive.Executive()
+        log = Log.Log(path="BogusPath",
+                      max_bytes_per_file=0,
+                      max_bytes_total=0,
+                      verbose=False)
+        log.log = mock.MagicMock()
+        executive = Executive.Executive(log)
         parent = ParentFake()
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING)
@@ -125,7 +170,12 @@ class TriggerTestCase(unittest.TestCase):
           'template': {'from': 'groucho',
                        'foo': ['<3', '==7', '>12']}
         }
-        executive = Executive.Executive()
+        log = Log.Log(path="BogusPath",
+                      max_bytes_per_file=0,
+                      max_bytes_total=0,
+                      verbose=False)
+        log.log = mock.MagicMock()
+        executive = Executive.Executive(log)
         parent = ParentFake()
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING)
@@ -154,7 +204,12 @@ class TriggerTestCase(unittest.TestCase):
           'template': {'from': 'the_switch',
                        'announce_state': {'value': 'on'}}
         }
-        executive = Executive.Executive()
+        log = Log.Log(path="BogusPath",
+                      max_bytes_per_file=0,
+                      max_bytes_total=0,
+                      verbose=False)
+        log.log = mock.MagicMock()
+        executive = Executive.Executive(log)
         parent = ParentFake()
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING)
@@ -184,7 +239,12 @@ class TriggerTestCase(unittest.TestCase):
           'type': 'timer', 
           'time': 3 # TODO
         }
-        executive = Executive.Executive()
+        log = Log.Log(path="BogusPath",
+                      max_bytes_per_file=0,
+                      max_bytes_total=0,
+                      verbose=False)
+        log.log = mock.MagicMock()
+        executive = Executive.Executive(log)
         parent = 2 # TODO
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING)
@@ -196,7 +256,12 @@ class TriggerTestCase(unittest.TestCase):
           'type': 'elapsed-time', 
           'time': 3 # TODO
         }
-        executive = Executive.Executive()
+        log = Log.Log(path="BogusPath",
+                      max_bytes_per_file=0,
+                      max_bytes_total=0,
+                      verbose=False)
+        log.log = mock.MagicMock()
+        executive = Executive.Executive(log)
         parent = 2 # TODO
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING_DEFIRING)
@@ -204,7 +269,12 @@ class TriggerTestCase(unittest.TestCase):
     def testAndTrigger(self):
         print '\n----- testAndTrigger -----'
         data = { 'name': 'foo', 'type': 'and'}
-        executive = Executive.Executive()
+        log = Log.Log(path="BogusPath",
+                      max_bytes_per_file=0,
+                      max_bytes_total=0,
+                      verbose=False)
+        log.log = mock.MagicMock()
+        executive = Executive.Executive(log)
         parent = 2 # TODO
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING)
@@ -212,7 +282,12 @@ class TriggerTestCase(unittest.TestCase):
     def testOrTrigger(self):
         print '\n----- testOrTrigger -----'
         data = { 'name': 'foo', 'type': 'or'}
-        executive = Executive.Executive()
+        log = Log.Log(path="BogusPath",
+                      max_bytes_per_file=0,
+                      max_bytes_total=0,
+                      verbose=False)
+        log.log = mock.MagicMock()
+        executive = Executive.Executive(log)
         parent = 2 # TODO
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.DEFIRING)
@@ -220,7 +295,12 @@ class TriggerTestCase(unittest.TestCase):
     def testNotTrigger(self):
         print '\n----- testNotTrigger -----'
         data = { 'name': 'foo', 'type': 'not'}
-        executive = Executive.Executive()
+        log = Log.Log(path="BogusPath",
+                      max_bytes_per_file=0,
+                      max_bytes_total=0,
+                      verbose=False)
+        log.log = mock.MagicMock()
+        executive = Executive.Executive(log)
         parent = 2 # TODO
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING)
