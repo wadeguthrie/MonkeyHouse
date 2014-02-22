@@ -115,23 +115,42 @@ class TriggerTestCase(unittest.TestCase):
         log.log = mock.MagicMock()
         executive = Executive.Executive(log)
         parent = ParentFake()
+        parent.on_trigger_change = mock.MagicMock()
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
 
+        # Element 'what' does not exist, should activate.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
         trigger.on_message({'from': 'groucho',
-                            'to': 'harpo'})  # Should match.
-        assert trigger.is_triggered()  # TODO: test activation
+                            'to': 'harpo'})
+        assert trigger.is_triggered()
+        assert log.log.call_count == 1
+        parent.on_trigger_change.assert_called_once_with(
+                Trigger.Trigger.FIRING, True)
 
+        # Element 'what' does exist but shouldn't, should deactivate.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
         trigger.on_message({'from': 'groucho',
                             'to': 'harpo',
-                            'what': 'ever'})  # Should disqualify
-        assert not trigger.is_triggered()  # TODO: test de-activation
+                            'what': 'ever'})
+        assert not trigger.is_triggered()
+        assert log.log.call_count == 1
+        parent.on_trigger_change.assert_called_once_with(
+                Trigger.Trigger.FIRING, False)
 
+        # Another activation, this time with an irrelevant value.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
         trigger.on_message({'from': 'groucho',
                             'to': 'harpo',
-                            'foo': 'IRRELEVANT-VALUE'})  # Should activate.
-        assert trigger.is_triggered()  # TODO: test activation
+                            'foo': 'IRRELEVANT-VALUE'})
+        assert trigger.is_triggered()
+        assert log.log.call_count == 1
+        parent.on_trigger_change.assert_called_once_with(
+                Trigger.Trigger.FIRING, True)
 
 
     def testMessageTriggerNumeric(self):
@@ -149,18 +168,55 @@ class TriggerTestCase(unittest.TestCase):
         log.log = mock.MagicMock()
         executive = Executive.Executive(log)
         parent = ParentFake()
+        parent.on_trigger_change = mock.MagicMock()
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
 
-        trigger.on_message({"from": "groucho", "foo": 1})
-        assert not trigger.is_triggered()  # TODO: test de-activation
-
-        trigger.on_message({"from": "groucho", "foo": 3})
-        assert not trigger.is_triggered()  # TODO: test de-activation
-
+        # Greater than 3; should ACTIVATE.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
         trigger.on_message({"from": "groucho", "foo": 4})
-        assert trigger.is_triggered()  # TODO: test activation
+        assert trigger.is_triggered()
+        assert log.log.call_count == 1
+        parent.on_trigger_change.assert_called_once_with(
+                Trigger.Trigger.FIRING, True)
+
+        # Less than 3; should DE-activate.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
+        trigger.on_message({"from": "groucho", "foo": 1})
+        assert not trigger.is_triggered()
+        assert log.log.call_count == 1
+        parent.on_trigger_change.assert_called_once_with(
+                Trigger.Trigger.FIRING, False)
+
+        # Equal to 3; should de-activate EXCEPT no trigger change -- should DO
+        # NOTHING.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
+        trigger.on_message({"from": "groucho", "foo": 3})
+        assert not trigger.is_triggered()
+        assert log.log.call_count == 0
+        assert parent.on_trigger_change.call_count == 0
+
+        # Greater than 3; should ACTIVATE.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
+        trigger.on_message({"from": "groucho", "foo": 4})
+        assert trigger.is_triggered()
+        assert log.log.call_count == 1
+        parent.on_trigger_change.assert_called_once_with(
+                Trigger.Trigger.FIRING, True)
+
+        # Less than 3; should DE-activate.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
+        trigger.on_message({"from": "groucho", "foo": 1})
+        assert not trigger.is_triggered()
+        assert log.log.call_count == 1
+        parent.on_trigger_change.assert_called_once_with(
+                Trigger.Trigger.FIRING, False)
 
     def testMessageTriggerArray(self):
         print '\n----- testMessageTriggerArray -----'
@@ -177,24 +233,55 @@ class TriggerTestCase(unittest.TestCase):
         log.log = mock.MagicMock()
         executive = Executive.Executive(log)
         parent = ParentFake()
+        parent.on_trigger_change = mock.MagicMock()
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING)
-        assert not trigger.is_triggered()  # TODO: test de-activation
+        assert not trigger.is_triggered()
 
+        # <3, should ACTiVATE.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
         trigger.on_message({"from": "groucho", "foo": 1})
-        assert trigger.is_triggered()  # TODO: test activation
+        assert trigger.is_triggered()
+        assert log.log.call_count == 1
+        parent.on_trigger_change.assert_called_once_with(
+                Trigger.Trigger.FIRING, True)
 
+        # Between 3 and 7; should DE-activate.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
         trigger.on_message({"from": "groucho", "foo": 4})
-        assert not trigger.is_triggered()  # TODO: test de-activation
+        assert not trigger.is_triggered()
+        assert log.log.call_count == 1
+        parent.on_trigger_change.assert_called_once_with(
+                Trigger.Trigger.FIRING, False)
 
+        # == 7; should ACTIVATE
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
         trigger.on_message({"from": "groucho", "foo": 7})
-        assert trigger.is_triggered()  # TODO: test activation
+        assert trigger.is_triggered()
+        assert log.log.call_count == 1
+        parent.on_trigger_change.assert_called_once_with(
+                Trigger.Trigger.FIRING, True)
 
+        # Between 7 and 12; should DE-activate.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
         trigger.on_message({"from": "groucho", "foo": 10})
-        assert not trigger.is_triggered()  # TODO: test de-activation
+        assert not trigger.is_triggered()
+        assert log.log.call_count == 1
+        parent.on_trigger_change.assert_called_once_with(
+                Trigger.Trigger.FIRING, False)
 
+        # >12; should ACTIVATE.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
         trigger.on_message({"from": "groucho", "foo": 15})
-        assert trigger.is_triggered()  # TODO: test activation
+        assert trigger.is_triggered()
+        assert log.log.call_count == 1
+        parent.on_trigger_change.assert_called_once_with(
+                Trigger.Trigger.FIRING, True)
 
     def testMessageTriggerDict(self):
         print '\n----- testMessageTriggerDict -----'
@@ -211,25 +298,48 @@ class TriggerTestCase(unittest.TestCase):
         log.log = mock.MagicMock()
         executive = Executive.Executive(log)
         parent = ParentFake()
+        parent.on_trigger_change = mock.MagicMock()
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
 
+        # Value ON; Should ACTIVATE.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
         trigger.on_message({'from': 'the_switch',
-                            'announce_state': {'value': 'on'}})  # Should match.
-        assert trigger.is_triggered()  # TODO: test activation
+                            'announce_state': {'value': 'on'}})
+        assert trigger.is_triggered()
+        assert log.log.call_count == 1
+        parent.on_trigger_change.assert_called_once_with(
+                Trigger.Trigger.FIRING, True)
 
+        # Set State (not Announce); Should do nothing.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
         trigger.on_message({'from': 'the_switch',
-                            'set_state': {'value': 'on'}})  # Should change nothing.
-        assert trigger.is_triggered()  # TODO: test NO activation
+                            'set_state': {'value': 'on'}})
+        assert trigger.is_triggered()
+        assert log.log.call_count == 0
+        assert parent.on_trigger_change.call_count == 0
 
+        # Value OFF; Should DE-activate.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
         trigger.on_message({'from': 'the_switch',
-                            'announce_state': {'value': 'off'}})  # Should match.
-        assert not trigger.is_triggered()  # TODO: test activation
+                            'announce_state': {'value': 'off'}})
+        assert not trigger.is_triggered()
+        assert log.log.call_count == 1
+        parent.on_trigger_change.assert_called_once_with(
+                Trigger.Trigger.FIRING, False)
 
-        trigger.on_message({'from': 'the_switch',
-                            'set_state': {'value': 'off'}})  # Should change nothing.
-        assert not trigger.is_triggered()  # TODO: test NO de-activation
+        # Not from 'the-switch'; Should do nothing.
+        parent.on_trigger_change.reset_mock()
+        log.log.reset_mock()
+        trigger.on_message({'from': 'another_switch',
+                            'announce_state': {'value': 'on'}})
+        assert not trigger.is_triggered()
+        assert log.log.call_count == 0
+        assert parent.on_trigger_change.call_count == 0
 
 
     def testTimerTrigger(self):
@@ -245,7 +355,8 @@ class TriggerTestCase(unittest.TestCase):
                       verbose=False)
         log.log = mock.MagicMock()
         executive = Executive.Executive(log)
-        parent = 2 # TODO
+        parent = ParentFake()
+        parent.on_trigger_change = mock.MagicMock()
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING)
 
@@ -262,7 +373,8 @@ class TriggerTestCase(unittest.TestCase):
                       verbose=False)
         log.log = mock.MagicMock()
         executive = Executive.Executive(log)
-        parent = 2 # TODO
+        parent = ParentFake()
+        parent.on_trigger_change = mock.MagicMock()
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING_DEFIRING)
 
@@ -275,7 +387,8 @@ class TriggerTestCase(unittest.TestCase):
                       verbose=False)
         log.log = mock.MagicMock()
         executive = Executive.Executive(log)
-        parent = 2 # TODO
+        parent = ParentFake()
+        parent.on_trigger_change = mock.MagicMock()
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING)
 
@@ -288,7 +401,8 @@ class TriggerTestCase(unittest.TestCase):
                       verbose=False)
         log.log = mock.MagicMock()
         executive = Executive.Executive(log)
-        parent = 2 # TODO
+        parent = ParentFake()
+        parent.on_trigger_change = mock.MagicMock()
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.DEFIRING)
 
@@ -301,7 +415,8 @@ class TriggerTestCase(unittest.TestCase):
                       verbose=False)
         log.log = mock.MagicMock()
         executive = Executive.Executive(log)
-        parent = 2 # TODO
+        parent = ParentFake()
+        parent.on_trigger_change = mock.MagicMock()
         trigger = Trigger.TriggerFactory.NewTrigger(
                 data, executive, parent, Trigger.Trigger.FIRING)
 
