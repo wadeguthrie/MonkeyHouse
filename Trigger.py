@@ -5,6 +5,7 @@ import re
 import Log
 import MessageHandlerInterface
 
+# TODO: code-up 'arm' and test it
 # TODO: Then: Include the message test in the user's guide
 # TODO: After: Draw-up arrays in the incoming message
 # TODO: Later: Test leading '\'
@@ -312,6 +313,7 @@ class TimerTrigger(Trigger):
         print 'TimerTrigger ctor'
         self.__time = data['time']
         # TODO: executive's register_timer_handler(self).
+
 
     def arm(self):
         # TODO: Re-calculates the next time that this trigger is valid and

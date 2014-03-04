@@ -95,18 +95,21 @@ class When(object):
         # interesting one
 
         print '__time_from_string: starting with \'%s\'' % time_string
-        pieces = time_string.split(':')
+        if time_string is not None:
+            pieces = time_string.split(':')
 
-        self.hour = None if pieces[0] == '*' else int(pieces[0])
-        self.minute = None if pieces[1] == '*' else int(pieces[1])
+            self.hour = None if pieces[0] == '*' else int(pieces[0])
+            self.minute = None if pieces[1] == '*' else int(pieces[1])
 
-        if len(pieces) > 2:
-            pieces = pieces[2].split('.')
-            second = pieces[0]
-        else:
-            second = '0'
+            if len(pieces) > 2:
+                pieces = pieces[2].split('.')
+                self.second = pieces[0]
+            else:
+                self.second = '0'
 
-        print '__time_from_string: %s:%s:%s' % (hour, minute, second)
+        print '__time_from_string: %s:%s:%s' % (self.hour,
+                                                self.minute,
+                                                self.second)
 
     def get_next_occurrence(self):
         now = self._datetime.now()
@@ -158,6 +161,10 @@ class DateTime(When):
         self.month = None
         self.year = None
 
+        if date_string is None:
+            print 'Date: None-None-None'
+            return
+
         # Figure out the format for the date and extract the information.
 
         scanner=re.Scanner([
@@ -170,33 +177,33 @@ class DateTime(When):
           (r'\s+', None),   # Skip whitespace.
         ])
 
-        TOKEN, VALUE = range(2) # Indexes into scanner.scan returned tokens
-        tokens, remainder = scanner.scan(string)
+        TOKEN, VALUE = range(2) # Indexes into scanner.scan's tokens
+        tokens, remainder = scanner.scan(date_string)
         if len(remainder) > 0:
             raise ValueError('String %s has odd character for a date' %
-                             string)
+                             date_string)
 
         # e.g., 20 March 1920
-        if self.__matches(tokens, (self.NUMBER, self.ALPHA, self.NUMBER)):
+        if self._matches(tokens, (self.NUMBER, self.ALPHA, self.NUMBER)):
             self.day = self._value(tokens[0][VALUE])
             self.month = self._month_from_string(tokens[1][VALUE])
             self.year = self._value(tokens[2][VALUE])
 
         # e.g., March 20, 1920
-        elif self.__matches(tokens, (self.ALPHA,    # 0
-                                     self.NUMBER,   # 1
-                                     self.COMMA,    # 2
-                                     self.NUMBER)): # 3
+        elif self._matches(tokens, (self.ALPHA,    # 0
+                                    self.NUMBER,   # 1
+                                    self.COMMA,    # 2
+                                    self.NUMBER)): # 3
             self.day = self._value(tokens[1][VALUE])
             self.month = self._month_from_string(tokens[0][VALUE])
             self.year = self._value(tokens[3][VALUE])
 
         # e.g., 03/20/1920 or 20/03/1920
-        elif self.__matches(tokens, (self.NUMBER,   # 0
-                                     self.SLASH,    # 1
-                                     self.NUMBER,   # 2
-                                     self.SLASH,    # 3
-                                     self.NUMBER)): # 4
+        elif self._matches(tokens, (self.NUMBER,   # 0
+                                    self.SLASH,    # 1
+                                    self.NUMBER,   # 2
+                                    self.SLASH,    # 3
+                                    self.NUMBER)): # 4
             # Default to American order: month/day/year and re-arrange if
             # obviously wrong.
             self.day = self._value(tokens[2][VALUE])
@@ -204,18 +211,18 @@ class DateTime(When):
             self.year = self._value(tokens[4][VALUE])
 
         # e.g., 1920-03-20
-        elif self.__matches(tokens, (self.NUMBER,   # 0
-                                     self.DASH,     # 1
-                                     self.NUMBER,   # 2
-                                     self.DASH,     # 3
-                                     self.NUMBER)): # 4
+        elif self._matches(tokens, (self.NUMBER,   # 0
+                                    self.DASH,     # 1
+                                    self.NUMBER,   # 2
+                                    self.DASH,     # 3
+                                    self.NUMBER)): # 4
             self.day = self._value(tokens[4][VALUE])
             self.month = self._value(tokens[2][VALUE])
             self.year = self._value(tokens[0][VALUE])
 
         else:
             raise ValueError('String %s looks insufficiently like ' +
-                    'ANY date format.' % string)
+                    'ANY date format.' % date_string)
 
         print 'First cut: %d-%d-%d' % (self.year, self.month, self.day)
 
@@ -239,7 +246,7 @@ class DateTime(When):
             self.day = self.month
             self.month = temp
 
-        print 'Second cut: %d-%d-%d' % (self.year, self.month, self.day)
+        print 'Date: %d-%d-%d' % (self.year, self.month, self.day)
 
 
     def _month_from_string(self, string):
