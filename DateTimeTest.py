@@ -86,7 +86,27 @@ class DateTimeTestCase(unittest.TestCase):
                                              "1920-03-20 15:16:*")
         self.__assert_time(when, 1920, 3, 20, 15, 16, None)
 
+    def testTimeMultipleAsterisk(self):
+        print '\n----- testTimeMultipleAsterisk -----'
+        when = DateTime.WhenFactory.MakeWhen(datetime.datetime, 
+                                             "20 * 1920 10:11:*")
+        self.__assert_time(when, 1920, None, 20, 10, 11, None)
 
+        when = DateTime.WhenFactory.MakeWhen(datetime.datetime,
+                                             "* 21, * 12:13:14")
+        self.__assert_time(when, None, None, 21, 12, 13, 14)
+
+        when = DateTime.WhenFactory.MakeWhen(datetime.datetime,
+                                             "5/22/1923 *:14:*")
+        self.__assert_time(when, 1923, 5, 22, None, 14, None)
+
+        when = DateTime.WhenFactory.MakeWhen(datetime.datetime,
+                                             "*/23/1924 *:15:16")
+        self.__assert_time(when, 1924, None, 23, None, 15, 16)
+
+        when = DateTime.WhenFactory.MakeWhen(datetime.datetime,
+                                             "*-*-20 15:*:17")
+        self.__assert_time(when, None, None, 20, 15, None, 17)
 
     def testTimeDateSecond(self):
         print '\n----- testTimeDateSecond -----'
