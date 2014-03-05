@@ -18,15 +18,16 @@ class WhenFactory(object):
     time = '(?P<time>[0-9\*]+:[0-9:\.\*]+)'  # Numbers(required),colons(required),period
     days = '(?P<days>[A-Za-z, ]+)'  # Just strings, spaces, and commas (no numbers)
     date = '(?P<date>[^:]*[0-9\*][^:]*)'  # a string w/numbers or a star (no colons)
-    just_time = re.compile('^ *' + time + ' *$')
+    inc = ' *(?P<inc>\+[0-9]+ [a-zA-Z]+)?'
+    just_time = re.compile('^ *' + time + inc + ' *$')
     days_first = re.compile(
-            ' *' + days + '[ ,]+' + time  + ' *$')
+            ' *' + days + '[ ,]+' + time  + inc + ' *$')
     days_second = re.compile(
-            ' *' + time + '[ ,]+' + days + ' *$')
+            ' *' + time + inc + '[ ,]+' + days + ' *$')
     date_second = re.compile(
-            ' *' + time + '[ ,]+' + date + ' *$')
+            ' *' + time + inc + '[ ,]+' + date + ' *$')
     date_first = re.compile(
-            ' *' + date + '[ ,]+' + time + ' *$')
+            ' *' + date + '[ ,]+' + time + inc + ' *$')
 
     @staticmethod
     def MakeWhen(date_time, string):
@@ -35,49 +36,61 @@ class WhenFactory(object):
 
         if not string or re.match('[Nn][Oo][Ww]', string):
             print '-NOW-'
-            return DateTime(date_time, date_string=None,
-                                       time_string=None,
-                                       increment_string=increment_string)
+            return DateTime(date_time,
+                            date_string=None,
+                            time_string=None,
+                            increment_string=None)
 
         # Same time, every day
         match = WhenFactory.just_time.match(string)
         if match:
             print 'JUST TIME'
-            return DateTime(date_time, date_string=None,
-                                       time_string=match.groupdict()['time'],
-                                       increment_string=increment_string)
+            inc_string = (None if 'inc' not in match.groupdict()
+                               else match.groupdict()['inc'])
+            return DateTime(date_time,
+                            date_string=None,
+                            time_string=match.groupdict()['time'],
+                            increment_string=inc_string)
 
         match = WhenFactory.days_first.match(string)
         if match:
             print  'DAYS FIRST'
+            inc_string = (None if 'inc' not in match.groupdict()
+                               else match.groupdict()['inc'])
             return DayOfWeekTime(date_time,
                                  days_string=match.groupdict()['days'],
                                  time_string=match.groupdict()['time'],
-                                 increment_string=increment_string)
+                                 increment_string=inc_string)
 
         match = WhenFactory.days_second.match(string)
         if match:
             print  'DAYS SECOND'
+            inc_string = (None if 'inc' not in match.groupdict()
+                               else match.groupdict()['inc'])
             return DayOfWeekTime(date_time,
                                  days_string=match.groupdict()['days'],
                                  time_string=match.groupdict()['time'],
-                                 increment_string=increment_string)
+                                 increment_string=inc_string)
 
         match = WhenFactory.date_second.match(string)
         if match:
             print 'DATE SECOND'
+            inc_string = (None if 'inc' not in match.groupdict()
+                               else match.groupdict()['inc'])
             return DateTime(date_time,
                             date_string=match.groupdict()['date'],
                             time_string=match.groupdict()['time'],
-                            increment_string=increment_string)
+                            increment_string=inc_string)
 
         match = WhenFactory.date_first.match(string)
         if match:
             print 'DATE FIRST'
+            inc_string = (None if 'inc' not in match.groupdict()
+                               else match.groupdict()['inc'])
             return DateTime(date_time,
                             date_string=match.groupdict()['date'],
                             time_string=match.groupdict()['time'],
-                            increment_string=increment_string)
+                            increment_string=inc_string)
 
         print 'FOUND NOTHING'
         raise ValueError('String %s does not seem to contain a time/date' %
