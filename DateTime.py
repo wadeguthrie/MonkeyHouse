@@ -276,7 +276,7 @@ class DateTime(When):
 
 
 class DayOfWeekTime(When):
-    def __init__(self, days_string, time_string, increment_string):
+    def __init__(self, date_time, days_string, time_string, increment_string):
         """
         days_string is an array of strings, each is a day of the week
         """
@@ -285,6 +285,7 @@ class DayOfWeekTime(When):
                                             increment_string)
         days = days_string.split(',')
 
+        self.__day_of_week = {}
         self.__day_of_week['mon'] = False
         self.__day_of_week['tue'] = False
         self.__day_of_week['wed'] = False

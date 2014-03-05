@@ -29,7 +29,8 @@ class DateTimeTestCase(unittest.TestCase):
         assert when.minute == minute
         assert when.second == second
 
-    def __assert_days(when, mon, tues, wed, thu, fri, sat, sun, hour, minute,
+    @staticmethod
+    def __assert_days(when, mon, tue, wed, thu, fri, sat, sun, hour, minute,
             second):
         assert when.monday == mon
         assert when.tuesday == tue
@@ -149,13 +150,14 @@ class DateTimeTestCase(unittest.TestCase):
 
         # TODO: Days second
 
-    #def testTimeDaysFirst(self):
-    #    print '\n----- testTimeDaysFirst -----'
-    #    when = DateTime.WhenFactory.MakeWhen(datetime.datetime, 
-    #                                         "mondays,TUES 10:11:12")
-    #    self.__assert_days(when, mon=True, tues=True, wed=False, thu=False,
-    #                             fri=False, sat=False, sun=False,
-    #                             hour=10, minute=11, second=12)
+    def testTimeDaysFirst(self):
+        print '\n----- testTimeDaysFirst -----'
+        when = DateTime.WhenFactory.MakeWhen(datetime.datetime, 
+                                             "mondays,TUES 10:11:12")
+        self.__assert_days(when=when,
+                           mon=True,  tue=True,  wed=False, thu=False,
+                           fri=False, sat=False, sun=False,
+                           hour=10, minute=11, second=12)
 
         # TODO: Days first
 
