@@ -159,9 +159,29 @@ class DateTimeTestCase(unittest.TestCase):
                            fri=False, sat=False, sun=False,
                            hour=10, minute=11, second=12)
 
+        when = DateTime.WhenFactory.MakeWhen(datetime.datetime, 
+                                             "tuesday, wednesday 12:13:14")
+        self.__assert_days(when=when,
+                           mon=False, tue=True,  wed=True,  thu=False,
+                           fri=False, sat=False, sun=False,
+                           hour=12, minute=13, second=14)
+
+        when = DateTime.WhenFactory.MakeWhen(datetime.datetime, 
+                                             "FRI 13:14:15")
+        self.__assert_days(when=when,
+                           mon=False, tue=False, wed=False, thu=False,
+                           fri=True,  sat=False, sun=False,
+                           hour=13, minute=14, second=15)
+
+        when = DateTime.WhenFactory.MakeWhen(datetime.datetime, 
+                                             "FRI *:15:16")
+        self.__assert_days(when=when,
+                           mon=False, tue=False, wed=False, thu=False,
+                           fri=True,  sat=False, sun=False,
+                           hour=None, minute=15, second=16)
+
         # TODO: Days first
 
-        # TODO: '*'
 
 if __name__ == '__main__':
     unittest.main()  # runs all tests
