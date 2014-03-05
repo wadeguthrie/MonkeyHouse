@@ -9,6 +9,76 @@ This is needed because 'datetime' doesn't allow incomplete dates and times
 increment.
 """
 
+class WhenFactory(object):
+    time = '[0-9\*]+:[0-9:\.\*]+'  # Numbers(required),colons(required),period
+    days = '[A-Za-z, ]+'  # Just strings, spaces, and commas (no numbers)
+    date = '[^:]*[0-9\*][^:]*'  # a string w/numbers or a star (no colons)
+    just_time = re.compile('^ *' + time + ' *$')
+    days_first = re.compile(
+            ' *(' + days + ')[ ,]+(' + time  + ') *$')
+    days_second = re.compile(
+            ' *(' + time + ')[ ,]+(' + days + ') *$')
+    date_second = re.compile(
+            ' *(' + time + ')[ ,]+(' + date + ') *$')
+    date_first = re.compile(
+            ' *(' + date + ')[ ,]+(' + time + ') *$')
+    increment = re.compile('([^+]*)\+(.*)')
+
+    @staticmethod
+    def MakeWhen(date_time, string):
+        print '\tSetTemplate: checking \'%s\'' % string
+        increment_string = None
+        match = WhenFactory.increment.match(string)
+        if match:
+            string = match.group(1)
+            increment_string = match.group(2)
+
+        if not string or re.match('[Nn][Oo][Ww]', string):
+            print '-NOW-'
+            return DateTime(date_time, date_string=None,
+                                       time_string=None,
+                                       increment_string=increment_string)
+
+        # Same time, every day
+        if WhenFactory.just_time.match(string):
+            print 'JUST TIME'
+            return DateTime(date_time, date_string=None,
+                                       time_string=string,
+                                       increment_string=increment_string)
+
+        match = WhenFactory.days_first.match(string)
+        if match:
+            print  'DAYS FIRST'
+            return DayOfWeekTime(date_time, days_string=match.group(1),
+                                            time_string=match.group(2),
+                                            increment_string=increment_string)
+
+        match = WhenFactory.days_second.match(string)
+        if match:
+            print  'DAYS SECOND'
+            return DayOfWeekTime(date_time, days_string=match.group(2),
+                                            time_string=match.group(1),
+                                            increment_string=increment_string)
+
+        match = WhenFactory.date_second.match(string)
+        if match:
+            print 'DATE SECOND'
+            return DateTime(date_time, date_string=match.group(2),
+                                       time_string=match.group(1),
+                                       increment_string=increment_string)
+
+        match = WhenFactory.date_first.match(string)
+        if match:
+            print 'DATE FIRST: %s, %s' % (match.group(2), match.group(1))
+            return DateTime(date_time, date_string=match.group(1),
+                                       time_string=match.group(2),
+                                       increment_string=increment_string)
+
+        print 'FOUND NOTHING'
+        raise ValueError('String %s does not seem to contain a time/date' %
+                         string)
+
+
 class When(object):
     """
     Base class for date/day-of-week/time-of-day classes.  Handles the
@@ -236,69 +306,36 @@ class DayOfWeekTime(When):
 
         print 'ALL DAYS RECOGNIZED'
 
-class WhenFactory(object):
-    time = '[0-9\*]+:[0-9:\.\*]+'  # Numbers(required),colons(required),period
-    date = '[^:]*[0-9\*][^:]*'  # Some numbers or a star, no colons
-    days = '[A-Za-z, ]+'  # Just strings, spaces, and commas
-    just_time = re.compile('^ *' + time + ' *$')
-    date_second = re.compile(' *(' + time + ')[ ,]+(' +
-                             date + ') *$')
-    days_second = re.compile(' *(' + time + ')[ ,]+(' +
-                             days + ') *$')
-    date_first = re.compile(' *(' + date + ')[ ,]+(' +
-                             time + ') *$')
-    increment = re.compile('([^+]*)\+(.*)')
+    # The following are largely for tests since the class is expected to be
+    # used polymorphically and DateTime doesn't have week days.
 
-    @staticmethod
-    def MakeWhen(date_time, string):
-        print '\tSetTemplate: checking \'%s\'' % string
-        increment_string = None
-        match = WhenFactory.increment.match(string)
-        if match:
-            string = match.group(1)
-            increment_string = match.group(2)
+    @property
+    def monday(self):
+        return self.__day_of_week['mon']
 
-        if not string or re.match('[Nn][Oo][Ww]', string):
-            print '-NOW-'
-            return DateTime(date_time, date_string=None,
-                                       time_string=None,
-                                       increment_string=increment_string)
+    @property
+    def tuesday(self):
+        return self.__day_of_week['tue']
 
-        # Same time, every day
-        if WhenFactory.just_time.match(string):
-            print 'JUST TIME'
-            return DateTime(date_time, date_string=None,
-                                       time_string=string,
-                                       increment_string=increment_string)
+    @property
+    def wednesday(self):
+        return self.__day_of_week['wed']
 
-        match = WhenFactory.date_second.match(string)
-        if match:
-            print 'DATE SECOND'
-            return DateTime(date_time, date_string=match.group(2),
-                                       time_string=match.group(1),
-                                       increment_string=increment_string)
+    @property
+    def thursday(self):
+        return self.__day_of_week['thu']
 
-        match = WhenFactory.days_second.match(string)
-        if match:
-            print  'DAYS SECOND'
-            self.__time_from_string(match.group(1))
-            self.__day_of_week_from_string(match.group(2).split(','))
-            return DayOfWeekTime(date_time, days_string=match.group(2),
-                                            time_string=match.group(1),
-                                            increment_string=increment_string)
-            return
+    @property
+    def friday(self):
+        return self.__day_of_week['fri']
 
-        match = WhenFactory.date_first.match(string)
-        if match:
-            print 'DATE FIRST: %s, %s' % (match.group(2), match.group(1))
-            return DateTime(date_time, date_string=match.group(1),
-                                       time_string=match.group(2),
-                                       increment_string=increment_string)
+    @property
+    def saturday(self):
+        return self.__day_of_week['sat']
 
-        print 'FOUND NOTHING'
-        raise ValueError('String %s does not seem to contain a time/date' %
-                         string)
-
+    @property
+    def sunday(self):
+        return self.__day_of_week['sun']
 
 if __name__ == '__main__':
     pass

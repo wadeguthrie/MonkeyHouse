@@ -29,6 +29,19 @@ class DateTimeTestCase(unittest.TestCase):
         assert when.minute == minute
         assert when.second == second
 
+    def __assert_days(when, mon, tues, wed, thu, fri, sat, sun, hour, minute,
+            second):
+        assert when.monday == mon
+        assert when.tuesday == tue
+        assert when.wednesday == wed
+        assert when.thursday == thu
+        assert when.friday == fri
+        assert when.saturday == sat
+        assert when.sunday == sun
+        assert when.hour == hour
+        assert when.minute == minute
+        assert when.second == second
+
     def testTimeTruncated(self):
         print '\n----- testTimeTruncated -----'
         when = DateTime.WhenFactory.MakeWhen(datetime.datetime, "now")
@@ -135,6 +148,14 @@ class DateTimeTestCase(unittest.TestCase):
         # swap day/month
 
         # TODO: Days second
+
+    #def testTimeDaysFirst(self):
+    #    print '\n----- testTimeDaysFirst -----'
+    #    when = DateTime.WhenFactory.MakeWhen(datetime.datetime, 
+    #                                         "mondays,TUES 10:11:12")
+    #    self.__assert_days(when, mon=True, tues=True, wed=False, thu=False,
+    #                             fri=False, sat=False, sun=False,
+    #                             hour=10, minute=11, second=12)
 
         # TODO: Days first
 
