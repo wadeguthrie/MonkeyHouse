@@ -288,7 +288,7 @@ class WhenFactory(object):
         match = WhenFactory.date_first.match(string)
         if match:
             print 'DATE FIRST: %s, %s' % (match.group(2), match.group(1))
-            return DataTime(date_time, date_string=match.group(1),
+            return DateTime(date_time, date_string=match.group(1),
                                        time_string=match.group(2),
                                        increment_string=increment_string)
 
