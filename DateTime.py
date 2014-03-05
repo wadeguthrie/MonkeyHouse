@@ -10,28 +10,28 @@ increment.
 """
 
 class WhenFactory(object):
-    time = '[0-9\*]+:[0-9:\.\*]+'  # Numbers(required),colons(required),period
-    days = '[A-Za-z, ]+'  # Just strings, spaces, and commas (no numbers)
-    date = '[^:]*[0-9\*][^:]*'  # a string w/numbers or a star (no colons)
+
+    # match = re.match('noise:\s*(?P<noise_level>[-0-9]+)\s+dbm', cleaned)
+    # if match.groupdict()['noise_level'] is not None:
+
+
+    time = '(?P<time>[0-9\*]+:[0-9:\.\*]+)'  # Numbers(required),colons(required),period
+    days = '(?P<days>[A-Za-z, ]+)'  # Just strings, spaces, and commas (no numbers)
+    date = '(?P<date>[^:]*[0-9\*][^:]*)'  # a string w/numbers or a star (no colons)
     just_time = re.compile('^ *' + time + ' *$')
     days_first = re.compile(
-            ' *(' + days + ')[ ,]+(' + time  + ') *$')
+            ' *' + days + '[ ,]+' + time  + ' *$')
     days_second = re.compile(
-            ' *(' + time + ')[ ,]+(' + days + ') *$')
+            ' *' + time + '[ ,]+' + days + ' *$')
     date_second = re.compile(
-            ' *(' + time + ')[ ,]+(' + date + ') *$')
+            ' *' + time + '[ ,]+' + date + ' *$')
     date_first = re.compile(
-            ' *(' + date + ')[ ,]+(' + time + ') *$')
-    increment = re.compile('([^+]*)\+(.*)')
+            ' *' + date + '[ ,]+' + time + ' *$')
 
     @staticmethod
     def MakeWhen(date_time, string):
         print '\tSetTemplate: checking \'%s\'' % string
         increment_string = None
-        match = WhenFactory.increment.match(string)
-        if match:
-            string = match.group(1)
-            increment_string = match.group(2)
 
         if not string or re.match('[Nn][Oo][Ww]', string):
             print '-NOW-'
@@ -40,39 +40,44 @@ class WhenFactory(object):
                                        increment_string=increment_string)
 
         # Same time, every day
-        if WhenFactory.just_time.match(string):
+        match = WhenFactory.just_time.match(string)
+        if match:
             print 'JUST TIME'
             return DateTime(date_time, date_string=None,
-                                       time_string=string,
+                                       time_string=match.groupdict()['time'],
                                        increment_string=increment_string)
 
         match = WhenFactory.days_first.match(string)
         if match:
             print  'DAYS FIRST'
-            return DayOfWeekTime(date_time, days_string=match.group(1),
-                                            time_string=match.group(2),
-                                            increment_string=increment_string)
+            return DayOfWeekTime(date_time,
+                                 days_string=match.groupdict()['days'],
+                                 time_string=match.groupdict()['time'],
+                                 increment_string=increment_string)
 
         match = WhenFactory.days_second.match(string)
         if match:
             print  'DAYS SECOND'
-            return DayOfWeekTime(date_time, days_string=match.group(2),
-                                            time_string=match.group(1),
-                                            increment_string=increment_string)
+            return DayOfWeekTime(date_time,
+                                 days_string=match.groupdict()['days'],
+                                 time_string=match.groupdict()['time'],
+                                 increment_string=increment_string)
 
         match = WhenFactory.date_second.match(string)
         if match:
             print 'DATE SECOND'
-            return DateTime(date_time, date_string=match.group(2),
-                                       time_string=match.group(1),
-                                       increment_string=increment_string)
+            return DateTime(date_time,
+                            date_string=match.groupdict()['date'],
+                            time_string=match.groupdict()['time'],
+                            increment_string=increment_string)
 
         match = WhenFactory.date_first.match(string)
         if match:
-            print 'DATE FIRST: %s, %s' % (match.group(2), match.group(1))
-            return DateTime(date_time, date_string=match.group(1),
-                                       time_string=match.group(2),
-                                       increment_string=increment_string)
+            print 'DATE FIRST'
+            return DateTime(date_time,
+                            date_string=match.groupdict()['date'],
+                            time_string=match.groupdict()['time'],
+                            increment_string=increment_string)
 
         print 'FOUND NOTHING'
         raise ValueError('String %s does not seem to contain a time/date' %
