@@ -36,12 +36,28 @@ class DateTimeTestCase(unittest.TestCase):
         when = DateTime.WhenFactory.MakeWhen(datetime.datetime, "10:11:12")
         self.__assert_time(when, None, None, None, 10, 11, 12)
 
+        # TODO: am/pm
         # TODO: Date second
 
-        # 20 March 1920
-        # March 20, 1920
-        # 03/20/1920 or 20/03/1920
-        # 1920-03-20
+        when = DateTime.WhenFactory.MakeWhen(datetime.datetime, 
+                                             "10:11:12 20 March 1920")
+        self.__assert_time(when, 1920, 3, 20, 10, 11, 12)
+
+        when = DateTime.WhenFactory.MakeWhen(datetime.datetime,
+                                             "12:13:14 April 21, 1922")
+        self.__assert_time(when, 1922, 4, 21, 12, 13, 14)
+
+        when = DateTime.WhenFactory.MakeWhen(datetime.datetime,
+                                             "13:14:15 5/22/1923")
+        self.__assert_time(when, 1923, 5, 22, 13, 14, 15)
+
+        when = DateTime.WhenFactory.MakeWhen(datetime.datetime,
+                                             "14:15:16 23/6/1924")
+        self.__assert_time(when, 1924, 6, 23, 14, 15, 16)
+
+        when = DateTime.WhenFactory.MakeWhen(datetime.datetime,
+                                             "15:16:17 1920-03-20")
+        self.__assert_time(when, 1920, 3, 20, 15, 16, 17)
 
         # swap year/day
         # swap year/month
@@ -50,6 +66,8 @@ class DateTimeTestCase(unittest.TestCase):
         # TODO: Days second
 
         # TODO: Days first
+
+        # TODO: '*'
 
 if __name__ == '__main__':
     unittest.main()  # runs all tests
