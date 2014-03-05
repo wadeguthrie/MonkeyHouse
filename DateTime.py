@@ -38,8 +38,11 @@ class When(object):
             self.minute = None if pieces[1] == '*' else int(pieces[1])
 
             if len(pieces) > 2:
-                pieces = pieces[2].split('.')
-                self.second = int(pieces[0])
+                if pieces[2] == '*':
+                    self.second = None
+                else:
+                    pieces = pieces[2].split('.')
+                    self.second = int(pieces[0])
             else:
                 self.second = 0
 
@@ -160,7 +163,7 @@ class DateTime(When):
             raise ValueError('String %s looks insufficiently like ' +
                     'ANY date format.' % date_string)
 
-        print 'First cut: %d-%d-%d' % (self.year, self.month, self.day)
+        print 'First cut: %r-%r-%r' % (self.year, self.month, self.day)
 
         # Now, re-arrange based on the size of the numbers.
         # See if something else should be the year
@@ -182,7 +185,7 @@ class DateTime(When):
             self.day = self.month
             self.month = temp
 
-        print 'Date: %d-%d-%d' % (self.year, self.month, self.day)
+        print 'Date: %r-%r-%r' % (self.year, self.month, self.day)
 
 
     def _month_from_string(self, string):
