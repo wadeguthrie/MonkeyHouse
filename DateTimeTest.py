@@ -148,8 +148,6 @@ class DateTimeTestCase(unittest.TestCase):
         # swap year/month
         # swap day/month
 
-        # TODO: Days second
-
     def testTimeDaysFirst(self):
         print '\n----- testTimeDaysFirst -----'
         when = DateTime.WhenFactory.MakeWhen(datetime.datetime, 
@@ -174,13 +172,42 @@ class DateTimeTestCase(unittest.TestCase):
                            hour=13, minute=14, second=15)
 
         when = DateTime.WhenFactory.MakeWhen(datetime.datetime, 
-                                             "FRI *:15:16")
+                                             "sun *:15:16")
+        self.__assert_days(when=when,
+                           mon=False, tue=False, wed=False, thu=False,
+                           fri=False, sat=False, sun=True,
+                           hour=None, minute=15, second=16)
+
+    def testTimeDaysSecond(self):
+        print '\n----- testTimeDaysSecond -----'
+        when = DateTime.WhenFactory.MakeWhen(datetime.datetime, 
+                                             "10:11:12 mondays,TUES")
+        self.__assert_days(when=when,
+                           mon=True,  tue=True,  wed=False, thu=False,
+                           fri=False, sat=False, sun=False,
+                           hour=10, minute=11, second=12)
+
+        when = DateTime.WhenFactory.MakeWhen(datetime.datetime, 
+                                             "12:13:14 tuesday, wednesday")
+        self.__assert_days(when=when,
+                           mon=False, tue=True,  wed=True,  thu=False,
+                           fri=False, sat=False, sun=False,
+                           hour=12, minute=13, second=14)
+
+        when = DateTime.WhenFactory.MakeWhen(datetime.datetime, 
+                                             "13:14:15 FRI")
         self.__assert_days(when=when,
                            mon=False, tue=False, wed=False, thu=False,
                            fri=True,  sat=False, sun=False,
+                           hour=13, minute=14, second=15)
+
+        when = DateTime.WhenFactory.MakeWhen(datetime.datetime, 
+                                             "*:15:16 sun ")
+        self.__assert_days(when=when,
+                           mon=False, tue=False, wed=False, thu=False,
+                           fri=False, sat=False, sun=True,
                            hour=None, minute=15, second=16)
 
-        # TODO: Days first
 
 
 if __name__ == '__main__':
