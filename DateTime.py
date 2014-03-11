@@ -34,14 +34,14 @@ class WhenFactory(object):
             ' *' + date + '[ ,]+' + time + inc + ' *$')
 
     @staticmethod
-    def MakeWhen(date_time, string):
+    def MakeWhen(string):
         print '\tSetTemplate: checking \'%s\'' % string
         increment_string = None
 
+        # TODO: 'FromArmed + <increment>'
         if not string or re.match('[Nn][Oo][Ww]', string):
             print '-NOW-'
-            return DateTime(date_time,
-                            date_string=None,
+            return DateTime(date_string=None,
                             time_string=None,
                             increment_string=None)
 
@@ -51,8 +51,7 @@ class WhenFactory(object):
             print 'JUST TIME'
             inc_string = (None if 'inc' not in match.groupdict()
                                else match.groupdict()['inc'])
-            return DateTime(date_time,
-                            date_string=None,
+            return DateTime(date_string=None,
                             time_string=match.groupdict()['time'],
                             increment_string=inc_string)
 
@@ -61,8 +60,7 @@ class WhenFactory(object):
             print  'DAYS FIRST'
             inc_string = (None if 'inc' not in match.groupdict()
                                else match.groupdict()['inc'])
-            return DayOfWeekTime(date_time,
-                                 days_string=match.groupdict()['days'],
+            return DayOfWeekTime(days_string=match.groupdict()['days'],
                                  time_string=match.groupdict()['time'],
                                  increment_string=inc_string)
 
@@ -71,8 +69,7 @@ class WhenFactory(object):
             print  'DAYS SECOND'
             inc_string = (None if 'inc' not in match.groupdict()
                                else match.groupdict()['inc'])
-            return DayOfWeekTime(date_time,
-                                 days_string=match.groupdict()['days'],
+            return DayOfWeekTime(days_string=match.groupdict()['days'],
                                  time_string=match.groupdict()['time'],
                                  increment_string=inc_string)
 
@@ -81,8 +78,7 @@ class WhenFactory(object):
             print 'DATE SECOND'
             inc_string = (None if 'inc' not in match.groupdict()
                                else match.groupdict()['inc'])
-            return DateTime(date_time,
-                            date_string=match.groupdict()['date'],
+            return DateTime(date_string=match.groupdict()['date'],
                             time_string=match.groupdict()['time'],
                             increment_string=inc_string)
 
@@ -91,8 +87,7 @@ class WhenFactory(object):
             print 'DATE FIRST'
             inc_string = (None if 'inc' not in match.groupdict()
                                else match.groupdict()['inc'])
-            return DateTime(date_time,
-                            date_string=match.groupdict()['date'],
+            return DateTime(date_string=match.groupdict()['date'],
                             time_string=match.groupdict()['time'],
                             increment_string=inc_string)
 
@@ -113,8 +108,7 @@ class When(object):
     # Used for parsing the date.
     ALPHA, NUMBER, SLASH, COMMA, DASH, ASTERISK = range(6)
 
-    def __init__(self, date_time, time_string, increment_string):
-        self._date_time = date_time # datetime object, permits mocking.
+    def __init__(self, time_string, increment_string):
         self._last_occurrence = None
         self._lastfired = None
 
@@ -236,8 +230,8 @@ class When(object):
 class DateTime(When):
     DAY, MONTH, YEAR = range(3, 6)  # Leave room for SECOND, MINUTE, HOUR
     min_value = When.min_value + [1, 1, 1]
-    max_value = When.max_value + [10000, 12, 31] # Recalculate max days in month.
-    def __init__(self, date_time, date_string, time_string, increment_string):
+    max_value = When.max_value + [31, 12, 10000] # Recalculate max days in month.
+    def __init__(self, date_string, time_string, increment_string):
         """
         If date and time are None, means 'now'
         Convert time and date strings into our internal representation.
@@ -249,8 +243,7 @@ class DateTime(When):
                 and the values in the positions).  Year is expected to be 4
                 digits.
         """
-        super(DateTime, self).__init__(date_time,
-                                       time_string,
+        super(DateTime, self).__init__(time_string,
                                        increment_string)
         # Adding date stuff to the pre-existing time stuff
         self._template.extend((None, None, None)) # self.DAY, .MONTH, & .YEAR
@@ -347,6 +340,20 @@ class DateTime(When):
         print 'Date: %r-%r-%r' % (self._template[self.YEAR], self._template[self.MONTH],
                 self._template[self.DAY])
 
+    def __repr__(self):
+        return '%s-%s-%s %s:%s:%s' % (
+                '*' if self._template[self.YEAR] is None
+                    else str(self._template[self.YEAR]),
+                '*' if self._template[self.MONTH] is None
+                    else str(self._template[self.MONTH]),
+                '*' if self._template[self.DAY] is None
+                    else str(self._template[self.DAY]),
+                '*' if self._template[self.HOUR] is None
+                    else str(self._template[self.HOUR]),
+                '*' if self._template[self.MINUTE] is None
+                    else str(self._template[self.MINUTE]),
+                '*' if self._template[self.SECOND] is None
+                    else str(self._template[self.SECOND]))
 
     def _month_from_string(self, string):
         if string == '*':
@@ -366,20 +373,30 @@ class DateTime(When):
         """
         return None if string == '*' else int(string)
 
-    def _first_occurrence(self, now_date_time):
+    def first_occurrence(self, now_date_time):
         """
         now_date_time - datetime object.
         returns - datetime object.
         """
-        self._lastfired = []
+        self._lastfired = [None, None, None, None, None, None]
 
-        now = []
+        now = [None, None, None, None, None, None]
         now[self.YEAR]   = now_date_time.year
         now[self.MONTH]  = now_date_time.month
         now[self.DAY]    = now_date_time.day
         now[self.HOUR]   = now_date_time.hour
         now[self.MINUTE] = now_date_time.minute
         now[self.SECOND] = now_date_time.second
+        print 'Now:      %d-%d-%d %d:%d:%d' % (now[self.YEAR],
+                                          now[self.MONTH],
+                                          now[self.DAY],
+                                          now[self.HOUR],
+                                          now[self.MINUTE],
+                                          now[self.SECOND])
+        print 'Template: %r' % self
+
+        # TODO: make sure that '09' in a date is OK - this is a random place
+        # to mention this.
 
         # We start with the template (but with the '*' values filled-in with
         # the current time - from 'now').
@@ -387,6 +404,12 @@ class DateTime(When):
             self._lastfired[i] = (now[i] if self._template[i] is None else 
                                   self._template[i])
 
+        print 'Start:    %d-%d-%d %d:%d:%d' % (self._lastfired[self.YEAR],
+                                            self._lastfired[self.MONTH],
+                                            self._lastfired[self.DAY],
+                                            self._lastfired[self.HOUR],
+                                            self._lastfired[self.MINUTE],
+                                            self._lastfired[self.SECOND])
         # Go from year to second:
         #  - if it's < now, increment the next '*' above &
         #    minimize every '*' below -- you're done
@@ -400,13 +423,15 @@ class DateTime(When):
         found = False  # Did we find a value less than 'now'?
         # Examining from year down to second.
         for i in reversed(range(len(self._lastfired))):
-            if _template[i] == None:
+            print 'template[%d] == %r' % (i, self._template[i])
+            if self._template[i] == None:
+                print '\t\'*\', append to previous_star'
                 previous_star.append(i)
 
             # If we'd already found a moment less than 'now', set all
             # future '*' values to their minimum.
             if found:
-                if _template[i] == None:
+                if self._template[i] == None:
                     self._lastfired[i] = self.min_value[i]
             elif self._lastfired[i] < now[i]:
                 print '\tnext-fired[%d] (%d) < now (%d)' % (i,
@@ -415,14 +440,19 @@ class DateTime(When):
                 # Increment the next highest '*'.  If it's already maxed-out
                 # (say, the month is currently 'December', then minimize it
                 # and incement the _next_ highest.
+                #print '\t\tprevious_star:%r' % previous_star
                 if not previous_star:
-                    print 'No future times match the template'
+                    print '(no previous_star) No future times match the template'
                     return None
                 star = previous_star.pop()
                 while self._lastfired[star] >= self.max_value[star]:
+                    print 'lastfired[%d] (%d) >= max_value[%d] (%d)' % (
+                        star, self._lastfired[star], star,
+                        self.max_value[star])
+
                     self._lastfired[star] = self.min_value[star]
                     if not previous_star:
-                        print 'No future times match the template'
+                        print '(ran out of previous star) No future times match the template'
                         return None
                     star = previous_star.pop()
                 self._lastfired[star] += 1
@@ -435,13 +465,13 @@ class DateTime(When):
                 print '\tnext-fired[%d] (%d) == now (%d)' % (i, 
                         self._lastfired[i], now[i])
 
-        result = DateTime.datetime.datetime(self._lastfired[self.YEAR],
-                                            self._lastfired[self.MONTH],
-                                            self._lastfired[self.DAY],
-                                            self._lastfired[self.HOUR],
-                                            self._lastfired[self.MINUTE],
-                                            self._lastfired[self.SECOND])
-        print 'Result: %s' % result.__str__()
+        result = datetime.datetime(self._lastfired[self.YEAR],
+                                   self._lastfired[self.MONTH],
+                                   self._lastfired[self.DAY],
+                                   self._lastfired[self.HOUR],
+                                   self._lastfired[self.MINUTE],
+                                   self._lastfired[self.SECOND])
+        print 'Result:   %s' % result.__str__()
         return result
 
 
@@ -458,12 +488,11 @@ class DateTime(When):
         return self._template[self.YEAR]
 
 class DayOfWeekTime(When):
-    def __init__(self, date_time, days_string, time_string, increment_string):
+    def __init__(self, days_string, time_string, increment_string):
         """
         days_string is an array of strings, each is a day of the week
         """
-        super(DayOfWeekTime, self).__init__(date_time,
-                                            time_string,
+        super(DayOfWeekTime, self).__init__(time_string,
                                             increment_string)
         days = days_string.split(',')
 
