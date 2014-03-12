@@ -181,9 +181,9 @@ class Moment(object):
         found = False  # Did we find a value less than 'now'?
         # Examining from year down to second.
         for i in reversed(range(len(self._lastfired))):
-            #print 'template[%d] == %r' % (i, self._template[i])
+            print 'template[%d] == %r' % (i, self._template[i])
             if self._template[i] == None:
-                #print '\t\'*\', append to previous_star'
+                print '\t\'*\', append to previous_star'
                 previous_star.append(i)
 
             # If we'd already found a moment less than 'now', set all
@@ -192,21 +192,21 @@ class Moment(object):
                 if self._template[i] == None:
                     self._lastfired[i] = self.min_value[i]
             elif self._lastfired[i] < now[i]:
-                #print '\tnext-fired[%d] (%d) < now (%d)' % (i,
-                #        self._lastfired[i], now[i])
+                print '\tnext-fired[%d] (%d) < now (%d)' % (i,
+                        self._lastfired[i], now[i])
                 found = True
                 # Increment the next highest '*'.  If it's already maxed-out
                 # (say, the month is currently 'December', then minimize it
                 # and incement the _next_ highest.
-                #print '\t\tprevious_star:%r' % previous_star
+                print '\t\tprevious_star:%r' % previous_star
                 if not previous_star:
                     print '(no previous_star) No future times match the template'
                     return None
                 star = previous_star.pop()
                 while self._lastfired[star] >= self.max_value[star]:
-                    #print 'lastfired[%d] (%d) >= max_value[%d] (%d)' % (
-                    #    star, self._lastfired[star], star,
-                    #    self.max_value[star])
+                    print 'lastfired[%d] (%d) >= max_value[%d] (%d)' % (
+                        star, self._lastfired[star], star,
+                        self.max_value[star])
 
                     self._lastfired[star] = self.min_value[star]
                     if not previous_star:
@@ -216,12 +216,12 @@ class Moment(object):
                 self._lastfired[star] += 1
             # If we've found a _future_ value, then we're done.
             elif self._lastfired[i] > now[i]:
-                #print '\tnext-fired[%d] (%d) > now (%d)' % (i,
-                #        self._lastfired[i], now[i])
+                print '\tnext-fired[%d] (%d) > now (%d)' % (i,
+                        self._lastfired[i], now[i])
                 break
-            #else:
-            #    print '\tnext-fired[%d] (%d) == now (%d)' % (i, 
-            #            self._lastfired[i], now[i])
+            else:
+                print '\tnext-fired[%d] (%d) == now (%d)' % (i, 
+                        self._lastfired[i], now[i])
 
         result = datetime.datetime(self._lastfired[self.YEAR],
                                    self._lastfired[self.MONTH],
@@ -291,8 +291,8 @@ class Moment(object):
         """
         Well, it's really 'carry_the_second_and_the_minute_and_...'
         """
-        self.max_value[self.DAY] = calendar.monthrange(
-                moment[self.YEAR], moment[self.MONTH])[1]
+        Moment.max_value[Moment.DAY] = calendar.monthrange(
+                moment[Moment.YEAR], moment[Moment.MONTH])[1]
         found_one = True  # Just for the first time, through.
         # Look, from second to year, for values that exceed their maximum.
         # When you find one, subtract out the max value and increment the next
@@ -304,9 +304,9 @@ class Moment(object):
         while found_one:
             found_one = False
             for i in range(len(moment)):
-                while moment[i] > self.max_value[i]:
+                while moment[i] > Moment.max_value[i]:
                     found_one = True
-                    moment[i] -= self.max_value[i]
+                    moment[i] -= Moment.max_value[i]
                     moment[i+1] += 1
 
     @property
@@ -568,6 +568,7 @@ class DayOfWeekTime(Moment):
             j = (i + weekday) % len(self.__valid_day)
             if self.__valid_day[j]:
                 lastfired[self.DAY] += i
+                self._carry_the_minute(lastfired)
                 return lastfired
 
         raise ValueError('No days selected for WeekDayTime')

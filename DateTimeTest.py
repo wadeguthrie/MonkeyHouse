@@ -264,6 +264,23 @@ class DateTimeTestCase(unittest.TestCase):
                                                               12, 11, 10))
         self.__assert_time(next_firing, 2014, 3, 16, 12, 11, 10)
 
+        print '== eight - crosses a month boundary =='
+        # 29 March 2014 is a Saturday
+        # 3 April is a Thursday
+        when = DateTime.MomentFactory.MakeMoment('Thursday, Friday 12:*:10')
+        next_firing = when.first_occurrence(datetime.datetime(2014, 03, 29,
+                                                              12, 11, 10))
+        self.__assert_time(next_firing, 2014, 4, 3, 12, 11, 10)
+
+        print '== nine - crosses a year boundary =='
+        # 30 December 2013 is a Monday
+        # 3 January 2014 is a Friday
+        when = DateTime.MomentFactory.MakeMoment('Friday 12:*:10')
+        next_firing = when.first_occurrence(datetime.datetime(2013, 12, 30,
+                                                              12, 11, 10))
+        self.__assert_time(next_firing, 2014, 1, 3, 12, 11, 10)
+
+
         # TODO: check the error paths.
 
 if __name__ == '__main__':
