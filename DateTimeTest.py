@@ -181,7 +181,7 @@ class DateTimeTestCase(unittest.TestCase):
                            fri=False, sat=False, sun=True,
                            hour=None, minute=15, second=16)
 
-    def testZFirstDateTime(self):
+    def testFirstDateTime(self):
         print '\n----- testFirstDateTime -----'
         # == The result is exactly 'now'.
         print '== one =='
@@ -217,6 +217,54 @@ class DateTimeTestCase(unittest.TestCase):
 
         # TODO: check the error paths.
 
+    def testZFirstDayOfWeekTime(self):
+        print '\n----- testFirstDayOfWeekTime -----'
+        # == The result is exactly 'now'.
+        # 11 Mar 2014 is a Tuesday
+
+        print '== one =='
+        when = DateTime.MomentFactory.MakeMoment('Mon, Tues 12:*:10')
+        next_firing = when.first_occurrence(datetime.datetime(2014, 03, 11,
+                                                              12, 11, 10))
+        self.__assert_time(next_firing, 2014, 3, 11, 12, 11, 10)
+
+        print '== two =='
+        when = DateTime.MomentFactory.MakeMoment('Tues, Thurs 12:*:10')
+        next_firing = when.first_occurrence(datetime.datetime(2014, 03, 11,
+                                                              12, 11, 10))
+        self.__assert_time(next_firing, 2014, 3, 11, 12, 11, 10)
+
+        print '== three =='
+        when = DateTime.MomentFactory.MakeMoment('Wed, Sat, Sun 12:*:10')
+        next_firing = when.first_occurrence(datetime.datetime(2014, 03, 11,
+                                                              12, 11, 10))
+        self.__assert_time(next_firing, 2014, 3, 12, 12, 11, 10)
+
+        print '== four =='
+        when = DateTime.MomentFactory.MakeMoment('Thurs 12:*:10')
+        next_firing = when.first_occurrence(datetime.datetime(2014, 03, 11,
+                                                              12, 11, 10))
+        self.__assert_time(next_firing, 2014, 3, 13, 12, 11, 10)
+
+        print '== five =='
+        when = DateTime.MomentFactory.MakeMoment('Sat, Fri 12:*:10')
+        next_firing = when.first_occurrence(datetime.datetime(2014, 03, 11,
+                                                              12, 11, 10))
+        self.__assert_time(next_firing, 2014, 3, 14, 12, 11, 10)
+
+        print '== six =='
+        when = DateTime.MomentFactory.MakeMoment('Saturday 12:*:10')
+        next_firing = when.first_occurrence(datetime.datetime(2014, 03, 11,
+                                                              12, 11, 10))
+        self.__assert_time(next_firing, 2014, 3, 15, 12, 11, 10)
+
+        print '== seven =='
+        when = DateTime.MomentFactory.MakeMoment('Monday, Sunday 12:*:10')
+        next_firing = when.first_occurrence(datetime.datetime(2014, 03, 11,
+                                                              12, 11, 10))
+        self.__assert_time(next_firing, 2014, 3, 16, 12, 11, 10)
+
+        # TODO: check the error paths.
 
 if __name__ == '__main__':
     unittest.main()  # runs all tests
