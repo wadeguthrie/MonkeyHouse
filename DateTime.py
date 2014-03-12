@@ -119,14 +119,15 @@ class Moment(object):
                      'hou' : self.HOUR,
                      'min' : self.MINUTE,
                      'sec' : self.SECOND}
-            pieces = re.match('\+ *([0-9]+) +([a-zA-Z])', increment_string)
+            pieces = re.match('\+ *([0-9]+) *([a-zA-Z]+)', increment_string)
             count = int(pieces.group(1))
             unit = pieces.group(2)
             short_unit = unit[:3].lower()
+            print 'short_unit: \'%s\'' % short_unit
             if short_unit in units:
                 # TODO: build this more automatically
-                self._increment = [None] * len(self.min_value)
-                self._incrment[units[short_unit]] = count
+                self._increment = [0] * len(self.min_value)
+                self._increment[units[short_unit]] = count
             else:
                 raise ValueError('Increment %s doesn\'t look right' %
                                  increment_string)
@@ -257,12 +258,12 @@ class Moment(object):
         self._carry_the_minute(self._lastfired)
 
         # Build a datetime object and return it.
-        return DateTime.datetime.datetime(self._lastfired[self.YEAR],
-                                          self._lastfired[self.MONTH],
-                                          self._lastfired[self.DAY],
-                                          self._lastfired[self.HOUR],
-                                          self._lastfired[self.MINUTE],
-                                          self._lastfired[self.SECOND])
+        return datetime.datetime(self._lastfired[self.YEAR],
+                                 self._lastfired[self.MONTH],
+                                 self._lastfired[self.DAY],
+                                 self._lastfired[self.HOUR],
+                                 self._lastfired[self.MINUTE],
+                                 self._lastfired[self.SECOND])
 
 
     def get_next_occurrence(self, now):

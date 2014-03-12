@@ -178,7 +178,7 @@ class DateTimeTestCase(unittest.TestCase):
                            fri=False, sat=False, sun=True,
                            hour=None, minute=15, second=16)
 
-    def testFirstDateTime(self):
+    def testZFirstDateTime(self):
         print '\n----- testFirstDateTime -----'
         # == The result is exactly 'now'.
         print '== one =='
@@ -189,10 +189,16 @@ class DateTimeTestCase(unittest.TestCase):
 
         # == Carry just up to the year.
         print '== two =='
-        when = DateTime.MomentFactory.MakeMoment('*-02-* 12:*:10')
+        when = DateTime.MomentFactory.MakeMoment('*-02-* 12:*:10 +2 days')
         next_firing = when.get_next_occurrence(datetime.datetime(2013, 03, 01,
                                                               12, 00, 10))
         self.__assert_time(next_firing, 2014, 2, 01, 12, 00, 10)
+
+        next_firing = when.get_next_occurrence(next_firing)
+        self.__assert_time(next_firing, 2014, 2, 03, 12, 00, 10)
+
+        next_firing = when.get_next_occurrence(next_firing)
+        self.__assert_time(next_firing, 2014, 2, 05, 12, 00, 10)
 
         # == Carry one, deep
         print '== three =='
