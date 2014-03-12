@@ -10,17 +10,10 @@ This is needed because 'datetime' doesn't allow incomplete dates and times
 increment.
 """
 
-# TODO: make sure that '09' in a date is OK - this is a random place
-# to mention this.
-
 class MomentFactory(object):
 
     # match = re.match('noise:\s*(?P<noise_level>[-0-9]+)\s+dbm', cleaned)
     # if match.groupdict()['noise_level'] is not None:
-
-    # TODO:
-    # inc by itself is relative to the arming time
-    # time+inc is relative to time
 
     time = '(?P<time>[0-9\*]+:[0-9:\.\*]+)'  # Numbers(required),colons(required),period
     days = '(?P<days>[A-Za-z, ]+)'  # Just strings, spaces, and commas (no numbers)
@@ -117,16 +110,35 @@ class Moment(object):
         self._lastfired = None
 
         # self.SECOND, .MINUTE, .HOUR, .DAY, .MONTH, and .YEAR
-        self._template = [None, None, None, None, None, None]
-        # TODO: build increment from increment_string -- +3 months is an
-        # interesting one
+        self._template = [None] * len(self.min_value)
+        self._increment = None
+        if increment_string is not None:
+            units = {'yea': self.YEAR,
+                     'mon' : self.MONTH,
+                     'day' : self.DAY,
+                     'hou' : self.HOUR,
+                     'min' : self.MINUTE,
+                     'sec' : self.SECOND}
+            pieces = re.match('\+ *([0-9]+) +([a-zA-Z])', increment_string)
+            count = int(pieces.group(1))
+            unit = pieces.group(2)
+            short_unit = unit[:3].lower()
+            if short_unit in units:
+                # TODO: build this more automatically
+                self._increment = [None] * len(self.min_value)
+                self._incrment[units[short_unit]] = count
+            else:
+                raise ValueError('Increment %s doesn\'t look right' %
+                                 increment_string)
 
         print '__time_from_string: starting with \'%s\'' % time_string
         if time_string is not None:
             pieces = time_string.split(':')
 
-            self._template[self.HOUR] = None if pieces[0] == '*' else int(pieces[0])
-            self._template[self.MINUTE] = None if pieces[1] == '*' else int(pieces[1])
+            self._template[self.HOUR] = (None if pieces[0] == '*'
+                                         else int(pieces[0]))
+            self._template[self.MINUTE] = (None if pieces[1] == '*'
+                                           else int(pieces[1]))
 
             if len(pieces) > 2:
                 if pieces[2] == '*':
@@ -141,7 +153,7 @@ class Moment(object):
                                                 self._template[self.MINUTE],
                                                 self._template[self.SECOND])
 
-    def first_occurrence(self, now_date_time):
+    def _first_occurrence(self, now_date_time):
         """
         now_date_time - datetime object.
         returns - datetime object.
@@ -236,12 +248,10 @@ class Moment(object):
         if self._lastfired is None:
             None
 
-        # TODO: first firing should: self._lastfired = []
-
         # Add the increment.
-        # TODO: _lastfired should be an array instead of a dict
-        for i in range(len(self._increment)):
-            self._lastfired[i] += self._increment[i]
+        if self._increment:
+            for i in range(len(self._increment)):
+                self._lastfired[i] += self._increment[i]
 
         # Fix any overflows.
         self._carry_the_minute(self._lastfired)
@@ -255,8 +265,7 @@ class Moment(object):
                                           self._lastfired[self.SECOND])
 
 
-    def get_next_occurrence(self):
-        now = self._datetime.now()
+    def get_next_occurrence(self, now):
         if self._lastfired is None:
             candidate = self._first_occurrence(now)
         else:
