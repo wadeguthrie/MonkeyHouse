@@ -277,7 +277,7 @@ class DateTimeTestCase(unittest.TestCase):
 
 
     def testZDateTimeIncrement(self):
-        print '\n----- testFirstDateTime -----'
+        print '\n----- testDateTimeIncrement -----'
         # == Carry just up to the year.  Add increment.
         print '== simple increment =='
         when = DateTime.MomentFactory.MakeMoment('*-02-* 12:*:10 +2 days')
@@ -315,6 +315,20 @@ class DateTimeTestCase(unittest.TestCase):
         next_firing = when.get_next_occurrence(next_firing)
         self.__assert_time(next_firing, 2013, 1, 12, 12, 02, 44)
 
+        print '== "armed" plus an increment =='
+        when = DateTime.MomentFactory.MakeMoment('armed +77 seconds')
+        next_firing = when.get_next_occurrence(
+                datetime.datetime(2013, 01, 12, 12, 00, 10))
+        self.__assert_time(next_firing, 2013, 1, 12, 12, 01, 27)
+
+        next_firing = when.get_next_occurrence(
+                datetime.datetime(2013, 01, 12, 12, 07, 23))
+        self.__assert_time(next_firing, 2013, 1, 12, 12, 8, 40)
+
+        next_firing = when.get_next_occurrence(
+                datetime.datetime(2014, 01, 12, 12, 00, 10))
+        self.__assert_time(next_firing, 2014, 1, 12, 12, 01, 27)
+
         print '== just an increment =='
         when = DateTime.MomentFactory.MakeMoment('+15 minutes')
         next_firing = when.get_next_occurrence(
@@ -327,6 +341,8 @@ class DateTimeTestCase(unittest.TestCase):
         next_firing = when.get_next_occurrence(next_firing)
         self.__assert_time(next_firing, 2013, 1, 30, 12, 30, 10)
 
+    # TODO: test increment without +inc for date time
+    # TODO: test increment without +inc for day time
 
 if __name__ == '__main__':
     unittest.main()  # runs all tests

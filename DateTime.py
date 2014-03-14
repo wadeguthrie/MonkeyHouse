@@ -29,6 +29,7 @@ class MomentFactory(object):
     date_first = re.compile(
             ' *' + date + '[ ,]+' + time + inc + ' *$')
     now = re.compile(' *[Nn][Oo][Ww]' + inc + ' *$')
+    armed = re.compile(' *[Aa][Rr][Mm][Ee][Dd]' + inc + ' *$')
     increment = re.compile(' *' + inc + ' *$')
 
     @staticmethod
@@ -36,7 +37,6 @@ class MomentFactory(object):
         print '\tSetTemplate: checking \'%s\'' % string
         increment_string = None
 
-        # TODO: 'FromArmed + <increment>'
         match = False if not string else MomentFactory.now.match(string)
         if not string or match:
             print '-NOW-'
@@ -53,6 +53,13 @@ class MomentFactory(object):
             return DateTime(date_string=None,
                             time_string=None,
                             increment_string=inc_string)
+
+        match = MomentFactory.armed.match(string)
+        if match:
+            print 'ARMED'
+            inc_string = (None if 'inc' not in match.groupdict()
+                               else match.groupdict()['inc'])
+            return FromArmedTime(increment_string=inc_string)
 
         # Same time, every day
         match = MomentFactory.just_time.match(string)
@@ -138,7 +145,6 @@ class Moment(object):
             short_unit = unit[:3].lower()
             print 'short_unit: \'%s\'' % short_unit
             if short_unit in units:
-                # TODO: build this more automatically
                 self._increment = [0] * len(self.min_value)
                 self._increment[units[short_unit]] = count
             else:
@@ -167,19 +173,19 @@ class Moment(object):
                                                 self._template[self.MINUTE],
                                                 self._template[self.SECOND])
 
-    def _first_occurrence(self, now_date_time):
+    def _first_occurrence(self, datetime_now):
         """
-        now_date_time - datetime object.
+        datetime_now - datetime object.
         returns - datetime object.
         """
 
         now = [None, None, None, None, None, None]
-        now[self.YEAR]   = now_date_time.year
-        now[self.MONTH]  = now_date_time.month
-        now[self.DAY]    = now_date_time.day
-        now[self.HOUR]   = now_date_time.hour
-        now[self.MINUTE] = now_date_time.minute
-        now[self.SECOND] = now_date_time.second
+        now[self.YEAR]   = datetime_now.year
+        now[self.MONTH]  = datetime_now.month
+        now[self.DAY]    = datetime_now.day
+        now[self.HOUR]   = datetime_now.hour
+        now[self.MINUTE] = datetime_now.minute
+        now[self.SECOND] = datetime_now.second
         print 'Now:      %d-%d-%d %02d:%02d:%02d' % (now[self.YEAR],
                                                      now[self.MONTH],
                                                      now[self.DAY],
@@ -545,6 +551,67 @@ class DateTime(Moment):
     @property
     def year(self):
         return self._template[self.YEAR]
+
+
+class FromArmedTime(DateTime):
+    """
+    This is _just_ like a DateTime (now) except that _do_increment starts
+    from the time it's called rather than from the last time it was called.
+    """
+    def __init__(self, increment_string):
+        """
+        If date and time are None, means 'now'
+        Convert time and date strings into our internal representation.
+
+        Args:
+          date_string  Date in any number of formats.  A '*' may take the
+                place of zero or more slots (but, beware -- we assume various
+                default positions for day, month, and year based on the format
+                and the values in the positions).  Year is expected to be 4
+                digits.
+        """
+        super(FromArmedTime, self).__init__(
+                date_string=None, time_string=None,
+                increment_string=increment_string)
+
+    def get_next_occurrence(self, datetime_now):
+        firing_time = [None] * 6
+        firing_time[self.YEAR]   = datetime_now.year
+        firing_time[self.MONTH]  = datetime_now.month
+        firing_time[self.DAY]    = datetime_now.day
+        firing_time[self.HOUR]   = datetime_now.hour
+        firing_time[self.MINUTE] = datetime_now.minute
+        firing_time[self.SECOND] = datetime_now.second
+
+        print 'Start:    %d-%d-%d %02d:%02d:%02d' % (firing_time[self.YEAR],
+                                                     firing_time[self.MONTH],
+                                                     firing_time[self.DAY],
+                                                     firing_time[self.HOUR],
+                                                     firing_time[self.MINUTE],
+                                                     firing_time[self.SECOND])
+
+        print 'Increment:%d-%d-%d %02d:%02d:%02d' % (
+                self._increment[self.YEAR],
+                self._increment[self.MONTH],
+                self._increment[self.DAY],
+                self._increment[self.HOUR],
+                self._increment[self.MINUTE],
+                self._increment[self.SECOND])
+
+        # Add the increment
+        for i in range(len(self._increment)):
+            firing_time[i] += self._increment[i]
+
+        # Fix any overflows.
+        self._carry_the_minute(firing_time)
+
+        # Build a datetime object and return it.
+        return datetime.datetime(firing_time[self.YEAR],
+                                 firing_time[self.MONTH],
+                                 firing_time[self.DAY],
+                                 firing_time[self.HOUR],
+                                 firing_time[self.MINUTE],
+                                 firing_time[self.SECOND])
 
 
 class DayOfWeekTime(Moment):
