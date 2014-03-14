@@ -28,6 +28,8 @@ class MomentFactory(object):
             ' *' + time + inc + '[ ,]+' + date + ' *$')
     date_first = re.compile(
             ' *' + date + '[ ,]+' + time + inc + ' *$')
+    now = re.compile(' *[Nn][Oo][Ww]' + inc + ' *$')
+    increment = re.compile(' *' + inc + ' *$')
 
     @staticmethod
     def MakeMoment(string):
@@ -35,11 +37,22 @@ class MomentFactory(object):
         increment_string = None
 
         # TODO: 'FromArmed + <increment>'
-        if not string or re.match('[Nn][Oo][Ww]', string):
+        match = False if not string else MomentFactory.now.match(string)
+        if not string or match:
             print '-NOW-'
+            inc_string = (None if 'inc' not in match.groupdict()
+                               else match.groupdict()['inc'])
             return DateTime(date_string=None,
                             time_string=None,
-                            increment_string=None)
+                            increment_string=inc_string)
+
+        match = MomentFactory.increment.match(string)
+        if match:
+            print 'INCREMENT'
+            inc_string = match.groupdict()['inc']
+            return DateTime(date_string=None,
+                            time_string=None,
+                            increment_string=inc_string)
 
         # Same time, every day
         match = MomentFactory.just_time.match(string)
@@ -100,7 +113,7 @@ class Moment(object):
     """
     SECOND, MINUTE, HOUR, DAY, MONTH, YEAR = range(6)
     min_value = [0, 0, 0, 1, 1, 1]
-    max_value = [23, 59, 59, 31, 12, 10000]
+    max_value = [59, 59, 59, 31, 12, 10000]
 
     # Used for parsing the date.
     ALPHA, NUMBER, SLASH, COMMA, DASH, ASTERISK = range(6)
@@ -113,7 +126,7 @@ class Moment(object):
         self._template = [None] * len(self.min_value)
         self._increment = None
         if increment_string is not None:
-            units = {'yea': self.YEAR,
+            units = {'yea' : self.YEAR,
                      'mon' : self.MONTH,
                      'day' : self.DAY,
                      'hou' : self.HOUR,
@@ -167,20 +180,21 @@ class Moment(object):
         now[self.HOUR]   = now_date_time.hour
         now[self.MINUTE] = now_date_time.minute
         now[self.SECOND] = now_date_time.second
-        print 'Now:      %d-%d-%d %d:%d:%d' % (now[self.YEAR],
-                                               now[self.MONTH],
-                                               now[self.DAY],
-                                               now[self.HOUR],
-                                               now[self.MINUTE],
-                                               now[self.SECOND])
+        print 'Now:      %d-%d-%d %02d:%02d:%02d' % (now[self.YEAR],
+                                                     now[self.MONTH],
+                                                     now[self.DAY],
+                                                     now[self.HOUR],
+                                                     now[self.MINUTE],
+                                                     now[self.SECOND])
         print 'Template: %r' % self
         self._lastfired = self._last_fired_from_template(now)
-        print 'Start:    %d-%d-%d %d:%d:%d' % (self._lastfired[self.YEAR],
-                                               self._lastfired[self.MONTH],
-                                               self._lastfired[self.DAY],
-                                               self._lastfired[self.HOUR],
-                                               self._lastfired[self.MINUTE],
-                                               self._lastfired[self.SECOND])
+        print 'Start:    %d-%d-%d %02d:%02d:%02d' % (
+                self._lastfired[self.YEAR],
+                self._lastfired[self.MONTH],
+                self._lastfired[self.DAY],
+                self._lastfired[self.HOUR],
+                self._lastfired[self.MINUTE],
+                self._lastfired[self.SECOND])
         # Go from year to second:
         #  - if it's < now, increment the next '*' above &
         #    minimize every '*' below -- you're done
@@ -194,9 +208,9 @@ class Moment(object):
         found = False  # Did we find a value less than 'now'?
         # Examining from year down to second.
         for i in reversed(range(len(self._lastfired))):
-            print 'template[%d] == %r' % (i, self._template[i])
+            # print 'template[%d] == %r' % (i, self._template[i])
             if self._template[i] == None:
-                print '\t\'*\', append to previous_star'
+                # print '\t\'*\', append to previous_star'
                 previous_star.append(i)
 
             # If we'd already found a moment less than 'now', set all
@@ -205,21 +219,21 @@ class Moment(object):
                 if self._template[i] == None:
                     self._lastfired[i] = self.min_value[i]
             elif self._lastfired[i] < now[i]:
-                print '\tnext-fired[%d] (%d) < now (%d)' % (i,
-                        self._lastfired[i], now[i])
+                #print '\tnext-fired[%d] (%d) < now (%d)' % (i,
+                #        self._lastfired[i], now[i])
                 found = True
                 # Increment the next highest '*'.  If it's already maxed-out
                 # (say, the month is currently 'December', then minimize it
                 # and incement the _next_ highest.
-                print '\t\tprevious_star:%r' % previous_star
+                #print '\t\tprevious_star:%r' % previous_star
                 if not previous_star:
                     print '(no previous_star) No future times match the template'
                     return None
                 star = previous_star.pop()
                 while self._lastfired[star] >= self.max_value[star]:
-                    print 'lastfired[%d] (%d) >= max_value[%d] (%d)' % (
-                        star, self._lastfired[star], star,
-                        self.max_value[star])
+                    #print 'lastfired[%d] (%d) >= max_value[%d] (%d)' % (
+                    #    star, self._lastfired[star], star,
+                    #    self.max_value[star])
 
                     self._lastfired[star] = self.min_value[star]
                     if not previous_star:
@@ -229,12 +243,12 @@ class Moment(object):
                 self._lastfired[star] += 1
             # If we've found a _future_ value, then we're done.
             elif self._lastfired[i] > now[i]:
-                print '\tnext-fired[%d] (%d) > now (%d)' % (i,
-                        self._lastfired[i], now[i])
+                #print '\tnext-fired[%d] (%d) > now (%d)' % (i,
+                #        self._lastfired[i], now[i])
                 break
-            else:
-                print '\tnext-fired[%d] (%d) == now (%d)' % (i, 
-                        self._lastfired[i], now[i])
+            #else:
+            #    print '\tnext-fired[%d] (%d) == now (%d)' % (i, 
+            #            self._lastfired[i], now[i])
 
         result = datetime.datetime(self._lastfired[self.YEAR],
                                    self._lastfired[self.MONTH],
@@ -246,28 +260,47 @@ class Moment(object):
         return result
 
     def _do_increment(self):
-        if self._lastfired is None:
-            None
+        if self._lastfired is None or self._increment is None:
+            return None
 
-        # Add the increment.
-        if self._increment:
-            for i in range(len(self._increment)):
-                self._lastfired[i] += self._increment[i]
+        print 'Start:    %d-%d-%d %02d:%02d:%02d' % (
+                self._lastfired[self.YEAR],
+                self._lastfired[self.MONTH],
+                self._lastfired[self.DAY],
+                self._lastfired[self.HOUR],
+                self._lastfired[self.MINUTE],
+                self._lastfired[self.SECOND])
+
+        # Add the increment.  Save the pre-carried version as 'last_fired' but
+        # put the current firing time as 'firing_time' and carry that value.
+        # This allows 1 month to be added to 30 January (and that result to be
+        # rounded up to 2 March) and then another month to be added (and
+        # _that_ result to be rounded up to 30 March).
+        print 'Increment:%d-%d-%d %02d:%02d:%02d' % (
+                self._increment[self.YEAR],
+                self._increment[self.MONTH],
+                self._increment[self.DAY],
+                self._increment[self.HOUR],
+                self._increment[self.MINUTE],
+                self._increment[self.SECOND])
+        for i in range(len(self._increment)):
+            self._lastfired[i] += self._increment[i]
+        firing_time = self._lastfired * 1  # Copies the list
 
         # Fix any overflows.
-        self._carry_the_minute(self._lastfired)
+        self._carry_the_minute(firing_time)
 
         # Build a datetime object and return it.
-        return datetime.datetime(self._lastfired[self.YEAR],
-                                 self._lastfired[self.MONTH],
-                                 self._lastfired[self.DAY],
-                                 self._lastfired[self.HOUR],
-                                 self._lastfired[self.MINUTE],
-                                 self._lastfired[self.SECOND])
+        return datetime.datetime(firing_time[self.YEAR],
+                                 firing_time[self.MONTH],
+                                 firing_time[self.DAY],
+                                 firing_time[self.HOUR],
+                                 firing_time[self.MINUTE],
+                                 firing_time[self.SECOND])
 
 
     def get_next_occurrence(self, now):
-        if self._lastfired is None:
+        if self._lastfired is None or self._increment is None:
             candidate = self._first_occurrence(now)
         else:
             candidate = self._do_increment()
@@ -311,13 +344,27 @@ class Moment(object):
         #
         # May have to go through a few times when changing month or year
         # changes the number of days in a month.
+
+        units = {Moment.YEAR: 'year',
+                 Moment.MONTH: 'month',
+                 Moment.DAY: 'day',
+                 Moment.HOUR: 'hour',
+                 Moment.MINUTE: 'minute',
+                 Moment.SECOND: 'second'}
+        print 'max values:', Moment.max_value
         while found_one:
             found_one = False
             for i in range(len(moment)):
                 while moment[i] > Moment.max_value[i]:
                     found_one = True
-                    moment[i] -= Moment.max_value[i]
+                    subtract = Moment.max_value[i] + (1
+                            if (Moment.min_value[i] == 0) else 0)
+                    print '%s is %d: minus %d and %s+1 gets %d' % (
+                            units[i], moment[i], subtract, units[i+1],
+                            moment[i+1]+1)
+                    moment[i] -= subtract
                     moment[i+1] += 1
+        print 'all carried: ', moment
 
     @property
     def second(self):
