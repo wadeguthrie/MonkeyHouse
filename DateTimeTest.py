@@ -187,6 +187,10 @@ class DateTimeTestCase(unittest.TestCase):
                 datetime.datetime(2013, 02, 28, 12, 11, 10))
         self.__assert_time(next_firing, 2013, 2, 28, 12, 11, 10)
 
+        next_firing = when.get_next_occurrence(
+                datetime.datetime(2014, 03, 12, 15, 14, 13))
+        self.__assert_time(next_firing, 2015, 2, 1, 12, 0, 10)
+
         # == Carry just up to the year.  Add increment.
         print '== two =='
         when = DateTime.MomentFactory.MakeMoment('*-02-* 12:*:10')
@@ -211,7 +215,7 @@ class DateTimeTestCase(unittest.TestCase):
         # TODO: check the error paths.
 
 
-    def testFirstDayOfWeekTime(self):
+    def testZFirstDayOfWeekTime(self):
         print '\n----- testFirstDayOfWeekTime -----'
         # 11 Mar 2014 is a Tuesday
 
@@ -220,6 +224,11 @@ class DateTimeTestCase(unittest.TestCase):
         next_firing = when.get_next_occurrence(
                 datetime.datetime(2014, 03, 11, 12, 11, 10))
         self.__assert_time(next_firing, 2014, 3, 11, 12, 11, 10)
+
+        # 30 May 2014 is Friday -- Monday is 2 June
+        next_firing = when.get_next_occurrence(
+                datetime.datetime(2014, 05, 30, 13, 57, 10))
+        self.__assert_time(next_firing, 2014, 6, 2, 12, 0, 10)
 
         print '== two =='
         when = DateTime.MomentFactory.MakeMoment('Tues, Thurs 12:*:10')
@@ -231,31 +240,31 @@ class DateTimeTestCase(unittest.TestCase):
         when = DateTime.MomentFactory.MakeMoment('Wed, Sat, Sun 12:*:10')
         next_firing = when.get_next_occurrence(
                 datetime.datetime(2014, 03, 11, 12, 11, 10))
-        self.__assert_time(next_firing, 2014, 3, 12, 12, 11, 10)
+        self.__assert_time(next_firing, 2014, 3, 12, 12, 0, 10)
 
         print '== four =='
         when = DateTime.MomentFactory.MakeMoment('Thurs 12:*:10')
         next_firing = when.get_next_occurrence(
                 datetime.datetime(2014, 03, 11, 12, 11, 10))
-        self.__assert_time(next_firing, 2014, 3, 13, 12, 11, 10)
+        self.__assert_time(next_firing, 2014, 3, 13, 12, 0, 10)
 
         print '== five =='
         when = DateTime.MomentFactory.MakeMoment('Sat, Fri 12:*:10')
         next_firing = when.get_next_occurrence(
                 datetime.datetime(2014, 03, 11, 12, 11, 10))
-        self.__assert_time(next_firing, 2014, 3, 14, 12, 11, 10)
+        self.__assert_time(next_firing, 2014, 3, 14, 12, 0, 10)
 
         print '== six =='
         when = DateTime.MomentFactory.MakeMoment('Saturday 12:*:10')
         next_firing = when.get_next_occurrence(
                 datetime.datetime(2014, 03, 11, 12, 11, 10))
-        self.__assert_time(next_firing, 2014, 3, 15, 12, 11, 10)
+        self.__assert_time(next_firing, 2014, 3, 15, 12, 0, 10)
 
         print '== seven =='
         when = DateTime.MomentFactory.MakeMoment('Monday, Sunday 12:*:10')
         next_firing = when.get_next_occurrence(
                 datetime.datetime(2014, 03, 11, 12, 11, 10))
-        self.__assert_time(next_firing, 2014, 3, 16, 12, 11, 10)
+        self.__assert_time(next_firing, 2014, 3, 16, 12, 0, 10)
 
         print '== eight - crosses a month boundary =='
         # 29 March 2014 is a Saturday
@@ -263,7 +272,7 @@ class DateTimeTestCase(unittest.TestCase):
         when = DateTime.MomentFactory.MakeMoment('Thursday, Friday 12:*:09')
         next_firing = when.get_next_occurrence(
                 datetime.datetime(2014, 03, 29, 12, 11, 9))
-        self.__assert_time(next_firing, 2014, 4, 3, 12, 11, 9)
+        self.__assert_time(next_firing, 2014, 4, 3, 12, 0, 9)
 
         print '== nine - crosses a year boundary =='
         # 30 December 2013 is a Monday
@@ -271,12 +280,12 @@ class DateTimeTestCase(unittest.TestCase):
         when = DateTime.MomentFactory.MakeMoment('Friday 12:*:10')
         next_firing = when.get_next_occurrence(
                 datetime.datetime(2013, 12, 30, 12, 11, 10))
-        self.__assert_time(next_firing, 2014, 1, 3, 12, 11, 10)
+        self.__assert_time(next_firing, 2014, 1, 3, 12, 0, 10)
 
         # TODO: check the error paths.
 
 
-    def testZDateTimeIncrement(self):
+    def testDateTimeIncrement(self):
         print '\n----- testDateTimeIncrement -----'
         # == Carry just up to the year.  Add increment.
         print '== simple increment =='
@@ -341,8 +350,6 @@ class DateTimeTestCase(unittest.TestCase):
         next_firing = when.get_next_occurrence(next_firing)
         self.__assert_time(next_firing, 2013, 1, 30, 12, 30, 10)
 
-    # TODO: test increment without +inc for date time
-    # TODO: test increment without +inc for day time
 
 if __name__ == '__main__':
     unittest.main()  # runs all tests

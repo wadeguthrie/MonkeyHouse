@@ -357,7 +357,6 @@ class Moment(object):
                  Moment.HOUR: 'hour',
                  Moment.MINUTE: 'minute',
                  Moment.SECOND: 'second'}
-        print 'max values:', Moment.max_value
         while found_one:
             found_one = False
             for i in range(len(moment)):
@@ -645,6 +644,22 @@ class DayOfWeekTime(Moment):
     # The following are largely for tests since the class is expected to be
     # used polymorphically and DateTime doesn't have week days.
 
+    def __repr__(self):
+        return '%s%s%s%s%s%s%s %s:%s:%s' % (
+                'Mon, ' if self.__valid_day[self.MONDAY] else '',
+                'Tues, ' if self.__valid_day[self.TUESDAY] else '',
+                'Wed, ' if self.__valid_day[self.WEDNESDAY] else '',
+                'Thur, ' if self.__valid_day[self.THURSDAY] else '',
+                'Fri, ' if self.__valid_day[self.FRIDAY] else '',
+                'Sat, ' if self.__valid_day[self.SATURDAY] else '',
+                'Sun, ' if self.__valid_day[self.SUNDAY] else '',
+                '*' if self._template[self.HOUR] is None
+                    else str(self._template[self.HOUR]),
+                '*' if self._template[self.MINUTE] is None
+                    else str(self._template[self.MINUTE]),
+                '*' if self._template[self.SECOND] is None
+                    else str(self._template[self.SECOND]))
+
     @property
     def monday(self):
         return self.__valid_day[self.MONDAY]
@@ -692,6 +707,15 @@ class DayOfWeekTime(Moment):
             j = (i + weekday) % len(self.__valid_day)
             if self.__valid_day[j]:
                 lastfired[self.DAY] += i
+                # If we had to move the day forward, minimize the '*' time
+                # values.
+                if i != 0:
+                    if self._template[self.HOUR] == None:
+                        lastfired[self.HOUR] = self.min_value[self.HOUR]
+                    if self._template[self.MINUTE] == None:
+                        lastfired[self.MINUTE] = self.min_value[self.MINUTE]
+                    if self._template[self.SECOND] == None:
+                        lastfired[self.SECOND] = self.min_value[self.SECOND]
                 self._carry_the_minute(lastfired)
                 return lastfired
 
