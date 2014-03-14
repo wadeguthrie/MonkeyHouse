@@ -1,7 +1,6 @@
 #! /usr/bin/python
 
 import datetime
-import mock
 import unittest
 
 import DateTime
@@ -33,7 +32,7 @@ class DateTimeTestCase(unittest.TestCase):
 
     @staticmethod
     def __assert_days(when, mon, tue, wed, thu, fri, sat, sun, hour, minute,
-            second):
+                      second):
         assert when.monday == mon
         assert when.tuesday == tue
         assert when.wednesday == wed
@@ -134,7 +133,7 @@ class DateTimeTestCase(unittest.TestCase):
                            hour=10, minute=11, second=12)
 
         when = DateTime.MomentFactory.MakeMoment(
-                "tuesday, wednesday 12:13:14")
+            "tuesday, wednesday 12:13:14")
         self.__assert_days(when=when,
                            mon=False, tue=True,  wed=True,  thu=False,
                            fri=False, sat=False, sun=False,
@@ -184,36 +183,35 @@ class DateTimeTestCase(unittest.TestCase):
         print '== one =='
         when = DateTime.MomentFactory.MakeMoment('*-02-* 12:*:10')
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2013, 02, 28, 12, 11, 10))
+            datetime.datetime(2013, 02, 28, 12, 11, 10))
         self.__assert_time(next_firing, 2013, 2, 28, 12, 11, 10)
 
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2014, 03, 12, 15, 14, 13))
+            datetime.datetime(2014, 03, 12, 15, 14, 13))
         self.__assert_time(next_firing, 2015, 2, 1, 12, 0, 10)
 
         # == Carry just up to the year.  Add increment.
         print '== two =='
         when = DateTime.MomentFactory.MakeMoment('*-02-* 12:*:10')
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2013, 03, 01, 12, 00, 10))
+            datetime.datetime(2013, 03, 01, 12, 00, 10))
         self.__assert_time(next_firing, 2014, 2, 01, 12, 00, 10)
 
         # == Carry one, deep
         print '== three =='
         when = DateTime.MomentFactory.MakeMoment('*-03-* 11:*:10')
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2013, 03, 31, 11, 11, 11))
+            datetime.datetime(2013, 03, 31, 11, 11, 11))
         self.__assert_time(next_firing, 2013, 3, 31, 11, 12, 10)
 
         # == Carry multiple places.
         print '== four =='
         when = DateTime.MomentFactory.MakeMoment('*-03-* 11:*:10')
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2013, 03, 31, 12, 11, 11))
+            datetime.datetime(2013, 03, 31, 12, 11, 11))
         self.__assert_time(next_firing, 2014, 3, 1, 11, 0, 10)
 
         # TODO: check the error paths.
-
 
     def testZFirstDayOfWeekTime(self):
         print '\n----- testFirstDayOfWeekTime -----'
@@ -222,48 +220,48 @@ class DateTimeTestCase(unittest.TestCase):
         print '== one =='
         when = DateTime.MomentFactory.MakeMoment('Mon, Tues 12:*:10')
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2014, 03, 11, 12, 11, 10))
+            datetime.datetime(2014, 03, 11, 12, 11, 10))
         self.__assert_time(next_firing, 2014, 3, 11, 12, 11, 10)
 
         # 30 May 2014 is Friday -- Monday is 2 June
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2014, 05, 30, 13, 57, 10))
+            datetime.datetime(2014, 05, 30, 13, 57, 10))
         self.__assert_time(next_firing, 2014, 6, 2, 12, 0, 10)
 
         print '== two =='
         when = DateTime.MomentFactory.MakeMoment('Tues, Thurs 12:*:10')
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2014, 03, 11, 12, 11, 10))
+            datetime.datetime(2014, 03, 11, 12, 11, 10))
         self.__assert_time(next_firing, 2014, 3, 11, 12, 11, 10)
 
         print '== three =='
         when = DateTime.MomentFactory.MakeMoment('Wed, Sat, Sun 12:*:10')
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2014, 03, 11, 12, 11, 10))
+            datetime.datetime(2014, 03, 11, 12, 11, 10))
         self.__assert_time(next_firing, 2014, 3, 12, 12, 0, 10)
 
         print '== four =='
         when = DateTime.MomentFactory.MakeMoment('Thurs 12:*:10')
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2014, 03, 11, 12, 11, 10))
+            datetime.datetime(2014, 03, 11, 12, 11, 10))
         self.__assert_time(next_firing, 2014, 3, 13, 12, 0, 10)
 
         print '== five =='
         when = DateTime.MomentFactory.MakeMoment('Sat, Fri 12:*:10')
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2014, 03, 11, 12, 11, 10))
+            datetime.datetime(2014, 03, 11, 12, 11, 10))
         self.__assert_time(next_firing, 2014, 3, 14, 12, 0, 10)
 
         print '== six =='
         when = DateTime.MomentFactory.MakeMoment('Saturday 12:*:10')
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2014, 03, 11, 12, 11, 10))
+            datetime.datetime(2014, 03, 11, 12, 11, 10))
         self.__assert_time(next_firing, 2014, 3, 15, 12, 0, 10)
 
         print '== seven =='
         when = DateTime.MomentFactory.MakeMoment('Monday, Sunday 12:*:10')
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2014, 03, 11, 12, 11, 10))
+            datetime.datetime(2014, 03, 11, 12, 11, 10))
         self.__assert_time(next_firing, 2014, 3, 16, 12, 0, 10)
 
         print '== eight - crosses a month boundary =='
@@ -271,7 +269,7 @@ class DateTimeTestCase(unittest.TestCase):
         # 3 April is a Thursday
         when = DateTime.MomentFactory.MakeMoment('Thursday, Friday 12:*:09')
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2014, 03, 29, 12, 11, 9))
+            datetime.datetime(2014, 03, 29, 12, 11, 9))
         self.__assert_time(next_firing, 2014, 4, 3, 12, 0, 9)
 
         print '== nine - crosses a year boundary =='
@@ -279,11 +277,10 @@ class DateTimeTestCase(unittest.TestCase):
         # 3 January 2014 is a Friday
         when = DateTime.MomentFactory.MakeMoment('Friday 12:*:10')
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2013, 12, 30, 12, 11, 10))
+            datetime.datetime(2013, 12, 30, 12, 11, 10))
         self.__assert_time(next_firing, 2014, 1, 3, 12, 0, 10)
 
         # TODO: check the error paths.
-
 
     def testDateTimeIncrement(self):
         print '\n----- testDateTimeIncrement -----'
@@ -291,7 +288,7 @@ class DateTimeTestCase(unittest.TestCase):
         print '== simple increment =='
         when = DateTime.MomentFactory.MakeMoment('*-02-* 12:*:10 +2 days')
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2013, 03, 01, 12, 00, 10))
+            datetime.datetime(2013, 03, 01, 12, 00, 10))
         self.__assert_time(next_firing, 2014, 2, 01, 12, 00, 10)
 
         next_firing = when.get_next_occurrence(next_firing)
@@ -303,7 +300,7 @@ class DateTimeTestCase(unittest.TestCase):
         print '== adding a month to 30 January  =='
         when = DateTime.MomentFactory.MakeMoment('*-01-* 12:*:10 +1 month')
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2013, 01, 30, 12, 00, 10))
+            datetime.datetime(2013, 01, 30, 12, 00, 10))
         self.__assert_time(next_firing, 2013, 1, 30, 12, 00, 10)
 
         next_firing = when.get_next_occurrence(next_firing)
@@ -315,7 +312,7 @@ class DateTimeTestCase(unittest.TestCase):
         print '== "now" plus an increment =='
         when = DateTime.MomentFactory.MakeMoment('now +77 seconds')
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2013, 01, 12, 12, 00, 10))
+            datetime.datetime(2013, 01, 12, 12, 00, 10))
         self.__assert_time(next_firing, 2013, 1, 12, 12, 00, 10)
 
         next_firing = when.get_next_occurrence(next_firing)
@@ -327,21 +324,21 @@ class DateTimeTestCase(unittest.TestCase):
         print '== "armed" plus an increment =='
         when = DateTime.MomentFactory.MakeMoment('armed +77 seconds')
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2013, 01, 12, 12, 00, 10))
+            datetime.datetime(2013, 01, 12, 12, 00, 10))
         self.__assert_time(next_firing, 2013, 1, 12, 12, 01, 27)
 
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2013, 01, 12, 12, 07, 23))
+            datetime.datetime(2013, 01, 12, 12, 07, 23))
         self.__assert_time(next_firing, 2013, 1, 12, 12, 8, 40)
 
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2014, 01, 12, 12, 00, 10))
+            datetime.datetime(2014, 01, 12, 12, 00, 10))
         self.__assert_time(next_firing, 2014, 1, 12, 12, 01, 27)
 
         print '== just an increment =='
         when = DateTime.MomentFactory.MakeMoment('+15 minutes')
         next_firing = when.get_next_occurrence(
-                datetime.datetime(2013, 01, 30, 12, 00, 10))
+            datetime.datetime(2013, 01, 30, 12, 00, 10))
         self.__assert_time(next_firing, 2013, 1, 30, 12, 00, 10)
 
         next_firing = when.get_next_occurrence(next_firing)

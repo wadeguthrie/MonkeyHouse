@@ -10,24 +10,21 @@ This is needed because 'datetime' doesn't allow incomplete dates and times
 increment.
 """
 
+
 class MomentFactory(object):
-
-    # match = re.match('noise:\s*(?P<noise_level>[-0-9]+)\s+dbm', cleaned)
-    # if match.groupdict()['noise_level'] is not None:
-
-    time = '(?P<time>[0-9\*]+:[0-9:\.\*]+)'  # Numbers(required),colons(required),period
-    days = '(?P<days>[A-Za-z, ]+)'  # Just strings, spaces, and commas (no numbers)
-    date = '(?P<date>[^:]*[0-9\*][^:]*)'  # a string w/numbers or a star (no colons)
+    time = '(?P<time>[0-9\*]+:[0-9:\.\*]+)'
+    days = '(?P<days>[A-Za-z, ]+)'
+    date = '(?P<date>[^:]*[0-9\*][^:]*)'
     inc = ' *(?P<inc>\+[0-9]+ [a-zA-Z]+)?'
     just_time = re.compile('^ *' + time + inc + ' *$')
     days_first = re.compile(
-            ' *' + days + '[ ,]+' + time  + inc + ' *$')
+        ' *' + days + '[ ,]+' + time + inc + ' *$')
     days_second = re.compile(
-            ' *' + time + inc + '[ ,]+' + days + ' *$')
+        ' *' + time + inc + '[ ,]+' + days + ' *$')
     date_second = re.compile(
-            ' *' + time + inc + '[ ,]+' + date + ' *$')
+        ' *' + time + inc + '[ ,]+' + date + ' *$')
     date_first = re.compile(
-            ' *' + date + '[ ,]+' + time + inc + ' *$')
+        ' *' + date + '[ ,]+' + time + inc + ' *$')
     now = re.compile(' *[Nn][Oo][Ww]' + inc + ' *$')
     armed = re.compile(' *[Aa][Rr][Mm][Ee][Dd]' + inc + ' *$')
     increment = re.compile(' *' + inc + ' *$')
@@ -35,13 +32,12 @@ class MomentFactory(object):
     @staticmethod
     def MakeMoment(string):
         print '\tSetTemplate: checking \'%s\'' % string
-        increment_string = None
 
         match = False if not string else MomentFactory.now.match(string)
         if not string or match:
             print '-NOW-'
             inc_string = (None if 'inc' not in match.groupdict()
-                               else match.groupdict()['inc'])
+                          else match.groupdict()['inc'])
             return DateTime(date_string=None,
                             time_string=None,
                             increment_string=inc_string)
@@ -58,7 +54,7 @@ class MomentFactory(object):
         if match:
             print 'ARMED'
             inc_string = (None if 'inc' not in match.groupdict()
-                               else match.groupdict()['inc'])
+                          else match.groupdict()['inc'])
             return FromArmedTime(increment_string=inc_string)
 
         # Same time, every day
@@ -66,25 +62,25 @@ class MomentFactory(object):
         if match:
             print 'JUST TIME'
             inc_string = (None if 'inc' not in match.groupdict()
-                               else match.groupdict()['inc'])
+                          else match.groupdict()['inc'])
             return DateTime(date_string=None,
                             time_string=match.groupdict()['time'],
                             increment_string=inc_string)
 
         match = MomentFactory.days_first.match(string)
         if match:
-            print  'DAYS FIRST'
+            print 'DAYS FIRST'
             inc_string = (None if 'inc' not in match.groupdict()
-                               else match.groupdict()['inc'])
+                          else match.groupdict()['inc'])
             return DayOfWeekTime(days_string=match.groupdict()['days'],
                                  time_string=match.groupdict()['time'],
                                  increment_string=inc_string)
 
         match = MomentFactory.days_second.match(string)
         if match:
-            print  'DAYS SECOND'
+            print 'DAYS SECOND'
             inc_string = (None if 'inc' not in match.groupdict()
-                               else match.groupdict()['inc'])
+                          else match.groupdict()['inc'])
             return DayOfWeekTime(days_string=match.groupdict()['days'],
                                  time_string=match.groupdict()['time'],
                                  increment_string=inc_string)
@@ -93,7 +89,7 @@ class MomentFactory(object):
         if match:
             print 'DATE SECOND'
             inc_string = (None if 'inc' not in match.groupdict()
-                               else match.groupdict()['inc'])
+                          else match.groupdict()['inc'])
             return DateTime(date_string=match.groupdict()['date'],
                             time_string=match.groupdict()['time'],
                             increment_string=inc_string)
@@ -102,7 +98,7 @@ class MomentFactory(object):
         if match:
             print 'DATE FIRST'
             inc_string = (None if 'inc' not in match.groupdict()
-                               else match.groupdict()['inc'])
+                          else match.groupdict()['inc'])
             return DateTime(date_string=match.groupdict()['date'],
                             time_string=match.groupdict()['time'],
                             increment_string=inc_string)
@@ -133,12 +129,12 @@ class Moment(object):
         self._template = [None] * len(self.min_value)
         self._increment = None
         if increment_string is not None:
-            units = {'yea' : self.YEAR,
-                     'mon' : self.MONTH,
-                     'day' : self.DAY,
-                     'hou' : self.HOUR,
-                     'min' : self.MINUTE,
-                     'sec' : self.SECOND}
+            units = {'yea': self.YEAR,
+                     'mon': self.MONTH,
+                     'day': self.DAY,
+                     'hou': self.HOUR,
+                     'min': self.MINUTE,
+                     'sec': self.SECOND}
             pieces = re.match('\+ *([0-9]+) *([a-zA-Z]+)', increment_string)
             count = int(pieces.group(1))
             unit = pieces.group(2)
@@ -180,10 +176,10 @@ class Moment(object):
         """
 
         now = [None, None, None, None, None, None]
-        now[self.YEAR]   = datetime_now.year
-        now[self.MONTH]  = datetime_now.month
-        now[self.DAY]    = datetime_now.day
-        now[self.HOUR]   = datetime_now.hour
+        now[self.YEAR] = datetime_now.year
+        now[self.MONTH] = datetime_now.month
+        now[self.DAY] = datetime_now.day
+        now[self.HOUR] = datetime_now.hour
         now[self.MINUTE] = datetime_now.minute
         now[self.SECOND] = datetime_now.second
         print 'Now:      %d-%d-%d %02d:%02d:%02d' % (now[self.YEAR],
@@ -195,12 +191,12 @@ class Moment(object):
         print 'Template: %r' % self
         self._lastfired = self._last_fired_from_template(now)
         print 'Start:    %d-%d-%d %02d:%02d:%02d' % (
-                self._lastfired[self.YEAR],
-                self._lastfired[self.MONTH],
-                self._lastfired[self.DAY],
-                self._lastfired[self.HOUR],
-                self._lastfired[self.MINUTE],
-                self._lastfired[self.SECOND])
+            self._lastfired[self.YEAR],
+            self._lastfired[self.MONTH],
+            self._lastfired[self.DAY],
+            self._lastfired[self.HOUR],
+            self._lastfired[self.MINUTE],
+            self._lastfired[self.SECOND])
         # Go from year to second:
         #  - if it's < now, increment the next '*' above &
         #    minimize every '*' below -- you're done
@@ -209,20 +205,20 @@ class Moment(object):
 
         # What's the last day of the current month?
         self.max_value[self.DAY] = calendar.monthrange(
-                self._lastfired[self.YEAR], self._lastfired[self.MONTH])[1]
+            self._lastfired[self.YEAR], self._lastfired[self.MONTH])[1]
         previous_star = []  # Keep track of the '*' values in the _template.
         found = False  # Did we find a value less than 'now'?
         # Examining from year down to second.
         for i in reversed(range(len(self._lastfired))):
             # print 'template[%d] == %r' % (i, self._template[i])
-            if self._template[i] == None:
+            if self._template[i] is None:
                 # print '\t\'*\', append to previous_star'
                 previous_star.append(i)
 
             # If we'd already found a moment less than 'now', set all
             # future '*' values to their minimum.
             if found:
-                if self._template[i] == None:
+                if self._template[i] is None:
                     self._lastfired[i] = self.min_value[i]
             elif self._lastfired[i] < now[i]:
                 #print '\tnext-fired[%d] (%d) < now (%d)' % (i,
@@ -233,7 +229,8 @@ class Moment(object):
                 # and incement the _next_ highest.
                 #print '\t\tprevious_star:%r' % previous_star
                 if not previous_star:
-                    print '(no previous_star) No future times match the template'
+                    print ('(no previous_star) No future times match ' +
+                           'the template')
                     return None
                 star = previous_star.pop()
                 while self._lastfired[star] >= self.max_value[star]:
@@ -243,7 +240,8 @@ class Moment(object):
 
                     self._lastfired[star] = self.min_value[star]
                     if not previous_star:
-                        print '(ran out of previous star) No future times match the template'
+                        print ('(ran out of previous star) No future ' +
+                               'times match the template')
                         return None
                     star = previous_star.pop()
                 self._lastfired[star] += 1
@@ -253,7 +251,7 @@ class Moment(object):
                 #        self._lastfired[i], now[i])
                 break
             #else:
-            #    print '\tnext-fired[%d] (%d) == now (%d)' % (i, 
+            #    print '\tnext-fired[%d] (%d) == now (%d)' % (i,
             #            self._lastfired[i], now[i])
 
         result = datetime.datetime(self._lastfired[self.YEAR],
@@ -270,12 +268,12 @@ class Moment(object):
             return None
 
         print 'Start:    %d-%d-%d %02d:%02d:%02d' % (
-                self._lastfired[self.YEAR],
-                self._lastfired[self.MONTH],
-                self._lastfired[self.DAY],
-                self._lastfired[self.HOUR],
-                self._lastfired[self.MINUTE],
-                self._lastfired[self.SECOND])
+            self._lastfired[self.YEAR],
+            self._lastfired[self.MONTH],
+            self._lastfired[self.DAY],
+            self._lastfired[self.HOUR],
+            self._lastfired[self.MINUTE],
+            self._lastfired[self.SECOND])
 
         # Add the increment.  Save the pre-carried version as 'last_fired' but
         # put the current firing time as 'firing_time' and carry that value.
@@ -283,12 +281,12 @@ class Moment(object):
         # rounded up to 2 March) and then another month to be added (and
         # _that_ result to be rounded up to 30 March).
         print 'Increment:%d-%d-%d %02d:%02d:%02d' % (
-                self._increment[self.YEAR],
-                self._increment[self.MONTH],
-                self._increment[self.DAY],
-                self._increment[self.HOUR],
-                self._increment[self.MINUTE],
-                self._increment[self.SECOND])
+            self._increment[self.YEAR],
+            self._increment[self.MONTH],
+            self._increment[self.DAY],
+            self._increment[self.HOUR],
+            self._increment[self.MINUTE],
+            self._increment[self.SECOND])
         for i in range(len(self._increment)):
             self._lastfired[i] += self._increment[i]
         firing_time = self._lastfired * 1  # Copies the list
@@ -304,7 +302,6 @@ class Moment(object):
                                  firing_time[self.MINUTE],
                                  firing_time[self.SECOND])
 
-
     def get_next_occurrence(self, now):
         if self._lastfired is None or self._increment is None:
             candidate = self._first_occurrence(now)
@@ -313,7 +310,6 @@ class Moment(object):
             while candidate < now:
                 candidate = self._do_increment()
         return candidate
-
 
     def _matches(self, input, template):
         """
@@ -341,7 +337,7 @@ class Moment(object):
         Well, it's really 'carry_the_second_and_the_minute_and_...'
         """
         Moment.max_value[Moment.DAY] = calendar.monthrange(
-                moment[Moment.YEAR], moment[Moment.MONTH])[1]
+            moment[Moment.YEAR], moment[Moment.MONTH])[1]
         found_one = True  # Just for the first time, through.
         # Look, from second to year, for values that exceed their maximum.
         # When you find one, subtract out the max value and increment the next
@@ -362,11 +358,11 @@ class Moment(object):
             for i in range(len(moment)):
                 while moment[i] > Moment.max_value[i]:
                     found_one = True
-                    subtract = Moment.max_value[i] + (1
-                            if (Moment.min_value[i] == 0) else 0)
+                    subtract = Moment.max_value[i] + (
+                        1 if (Moment.min_value[i] == 0) else 0)
                     print '%s is %d: minus %d and %s+1 gets %d' % (
-                            units[i], moment[i], subtract, units[i+1],
-                            moment[i+1]+1)
+                        units[i], moment[i], subtract, units[i+1],
+                        moment[i+1]+1)
                     moment[i] -= subtract
                     moment[i+1] += 1
         print 'all carried: ', moment
@@ -405,17 +401,17 @@ class DateTime(Moment):
 
         # Figure out the format for the date and extract the information.
 
-        scanner=re.Scanner([
-          (r'[a-zA-Z]+',    lambda scanner,token:(self.ALPHA, token)),
-          (r'[0-9]+',       lambda scanner,token:(self.NUMBER, token)),
-          (r'/',            lambda scanner,token:(self.SLASH, token)),
-          (r',',            lambda scanner,token:(self.COMMA, token)),
-          (r'-',            lambda scanner,token:(self.DASH, token)),
-          (r'\*',           lambda scanner,token:(self.ASTERISK, token)),
-          (r'\s+', None),   # Skip whitespace.
+        scanner = re.Scanner([
+            (r'[a-zA-Z]+', lambda scanner, token:(self.ALPHA, token)),
+            (r'[0-9]+', lambda scanner, token:(self.NUMBER, token)),
+            (r'/', lambda scanner, token:(self.SLASH, token)),
+            (r',', lambda scanner, token:(self.COMMA, token)),
+            (r'-', lambda scanner, token:(self.DASH, token)),
+            (r'\*', lambda scanner, token:(self.ASTERISK, token)),
+            (r'\s+', None),   # Skip whitespace.
         ])
 
-        TOKEN, VALUE = range(2) # Indexes into scanner.scan's tokens
+        TOKEN, VALUE = range(2)  # Indexes into scanner.scan's tokens
         tokens, remainder = scanner.scan(date_string)
         if len(remainder) > 0:
             raise ValueError('String %s has odd character for a date' %
@@ -424,24 +420,26 @@ class DateTime(Moment):
         # e.g., 20 March 1920
         if self._matches(tokens, (self.NUMBER, self.ALPHA, self.NUMBER)):
             self._template[self.DAY] = self._value(tokens[0][VALUE])
-            self._template[self.MONTH] = self._month_from_string(tokens[1][VALUE])
+            self._template[self.MONTH] = self._month_from_string(
+                tokens[1][VALUE])
             self._template[self.YEAR] = self._value(tokens[2][VALUE])
 
         # e.g., March 20, 1920
-        elif self._matches(tokens, (self.ALPHA,    # 0
-                                    self.NUMBER,   # 1
-                                    self.COMMA,    # 2
-                                    self.NUMBER)): # 3
+        elif self._matches(tokens, (self.ALPHA,     # 0
+                                    self.NUMBER,    # 1
+                                    self.COMMA,     # 2
+                                    self.NUMBER)):  # 3
             self._template[self.DAY] = self._value(tokens[1][VALUE])
-            self._template[self.MONTH] = self._month_from_string(tokens[0][VALUE])
+            self._template[self.MONTH] = self._month_from_string(
+                tokens[0][VALUE])
             self._template[self.YEAR] = self._value(tokens[3][VALUE])
 
         # e.g., 03/20/1920 or 20/03/1920
-        elif self._matches(tokens, (self.NUMBER,   # 0
-                                    self.SLASH,    # 1
-                                    self.NUMBER,   # 2
-                                    self.SLASH,    # 3
-                                    self.NUMBER)): # 4
+        elif self._matches(tokens, (self.NUMBER,    # 0
+                                    self.SLASH,     # 1
+                                    self.NUMBER,    # 2
+                                    self.SLASH,     # 3
+                                    self.NUMBER)):  # 4
             # Default to American order: month/day/year and re-arrange if
             # obviously wrong.
             self._template[self.DAY] = self._value(tokens[2][VALUE])
@@ -449,18 +447,18 @@ class DateTime(Moment):
             self._template[self.YEAR] = self._value(tokens[4][VALUE])
 
         # e.g., 1920-03-20
-        elif self._matches(tokens, (self.NUMBER,   # 0
-                                    self.DASH,     # 1
-                                    self.NUMBER,   # 2
-                                    self.DASH,     # 3
-                                    self.NUMBER)): # 4
+        elif self._matches(tokens, (self.NUMBER,    # 0
+                                    self.DASH,      # 1
+                                    self.NUMBER,    # 2
+                                    self.DASH,      # 3
+                                    self.NUMBER)):  # 4
             self._template[self.DAY] = self._value(tokens[4][VALUE])
             self._template[self.MONTH] = self._value(tokens[2][VALUE])
             self._template[self.YEAR] = self._value(tokens[0][VALUE])
 
         else:
             raise ValueError('String %s looks insufficiently like ' +
-                    'ANY date format.' % date_string)
+                             'ANY date format.' % date_string)
 
         print 'First cut: %r-%r-%r' % (self._template[self.YEAR],
                                        self._template[self.MONTH],
@@ -468,26 +466,26 @@ class DateTime(Moment):
 
         # Now, re-arrange based on the size of the numbers.
         # See if something else should be the year
-        if (self._template[self.MONTH] != None and
+        if (self._template[self.MONTH] is not None and
                 self._template[self.MONTH] >= 1000):
             print 'SWAP YEAR %s and MONTH %s' % (self._template[self.YEAR],
-                    self._template[self.MONTH])
+                                                 self._template[self.MONTH])
             temp = self._template[self.YEAR]
             self._template[self.YEAR] = self._template[self.MONTH]
             self._template[self.MONTH] = temp
-        elif (self._template[self.DAY] != None and
+        elif (self._template[self.DAY] is not None and
                 self._template[self.DAY] >= 1000):
             print 'SWAP YEAR %s and DAY %s' % (self._template[self.YEAR],
-                    self._template[self.DAY])
+                                               self._template[self.DAY])
             temp = self._template[self.YEAR]
             self._template[self.YEAR] = self._template[self.DAY]
             self._template[self.DAY] = temp
 
         # The year is set -- see if the month should be the day.
-        if (self._template[self.MONTH] != None and
+        if (self._template[self.MONTH] is not None and
                 self._template[self.MONTH] > 12):
             print 'SWAP DAY %s and MONTH %s' % (self._template[self.DAY],
-                    self._template[self.MONTH])
+                                                self._template[self.MONTH])
             temp = self._template[self.DAY]
             self._template[self.DAY] = self._template[self.MONTH]
             self._template[self.MONTH] = temp
@@ -498,18 +496,18 @@ class DateTime(Moment):
 
     def __repr__(self):
         return '%s-%s-%s %s:%s:%s' % (
-                '*' if self._template[self.YEAR] is None
-                    else str(self._template[self.YEAR]),
-                '*' if self._template[self.MONTH] is None
-                    else str(self._template[self.MONTH]),
-                '*' if self._template[self.DAY] is None
-                    else str(self._template[self.DAY]),
-                '*' if self._template[self.HOUR] is None
-                    else str(self._template[self.HOUR]),
-                '*' if self._template[self.MINUTE] is None
-                    else str(self._template[self.MINUTE]),
-                '*' if self._template[self.SECOND] is None
-                    else str(self._template[self.SECOND]))
+            '*' if self._template[self.YEAR] is None else str(
+                self._template[self.YEAR]),
+            '*' if self._template[self.MONTH] is None else str(
+                self._template[self.MONTH]),
+            '*' if self._template[self.DAY] is None else str(
+                self._template[self.DAY]),
+            '*' if self._template[self.HOUR] is None else str(
+                self._template[self.HOUR]),
+            '*' if self._template[self.MINUTE] is None else str(
+                self._template[self.MINUTE]),
+            '*' if self._template[self.SECOND] is None else str(
+                self._template[self.SECOND]))
 
     def _month_from_string(self, string):
         if string == '*':
@@ -535,9 +533,8 @@ class DateTime(Moment):
         lastfired = []
         for i in range(len(now)):
             lastfired.append(now[i] if self._template[i] is None else
-                    self._template[i])
+                             self._template[i])
         return lastfired
-
 
     @property
     def day(self):
@@ -570,15 +567,15 @@ class FromArmedTime(DateTime):
                 digits.
         """
         super(FromArmedTime, self).__init__(
-                date_string=None, time_string=None,
-                increment_string=increment_string)
+            date_string=None, time_string=None,
+            increment_string=increment_string)
 
     def get_next_occurrence(self, datetime_now):
         firing_time = [None] * 6
-        firing_time[self.YEAR]   = datetime_now.year
-        firing_time[self.MONTH]  = datetime_now.month
-        firing_time[self.DAY]    = datetime_now.day
-        firing_time[self.HOUR]   = datetime_now.hour
+        firing_time[self.YEAR] = datetime_now.year
+        firing_time[self.MONTH] = datetime_now.month
+        firing_time[self.DAY] = datetime_now.day
+        firing_time[self.HOUR] = datetime_now.hour
         firing_time[self.MINUTE] = datetime_now.minute
         firing_time[self.SECOND] = datetime_now.second
 
@@ -590,12 +587,12 @@ class FromArmedTime(DateTime):
                                                      firing_time[self.SECOND])
 
         print 'Increment:%d-%d-%d %02d:%02d:%02d' % (
-                self._increment[self.YEAR],
-                self._increment[self.MONTH],
-                self._increment[self.DAY],
-                self._increment[self.HOUR],
-                self._increment[self.MINUTE],
-                self._increment[self.SECOND])
+            self._increment[self.YEAR],
+            self._increment[self.MONTH],
+            self._increment[self.DAY],
+            self._increment[self.HOUR],
+            self._increment[self.MINUTE],
+            self._increment[self.SECOND])
 
         # Add the increment
         for i in range(len(self._increment)):
@@ -618,6 +615,7 @@ class DayOfWeekTime(Moment):
     __day_of_week = {'mon': MONDAY, 'tue': TUESDAY, 'wed': WEDNESDAY,
                      'thu': THURSDAY, 'fri': FRIDAY, 'sat': SATURDAY,
                      'sun': SUNDAY}
+
     def __init__(self, days_string, time_string, increment_string):
         """
         days_string is an array of strings, each is a day of the week
@@ -637,7 +635,7 @@ class DayOfWeekTime(Moment):
                 self.__valid_day[self.__day_of_week[short_day]] = True
             else:
                 raise ValueError('String %s does not seem to contain day' %
-                                 string)
+                                 days_string)
 
         print 'ALL DAYS RECOGNIZED'
 
@@ -646,19 +644,19 @@ class DayOfWeekTime(Moment):
 
     def __repr__(self):
         return '%s%s%s%s%s%s%s %s:%s:%s' % (
-                'Mon, ' if self.__valid_day[self.MONDAY] else '',
-                'Tues, ' if self.__valid_day[self.TUESDAY] else '',
-                'Wed, ' if self.__valid_day[self.WEDNESDAY] else '',
-                'Thur, ' if self.__valid_day[self.THURSDAY] else '',
-                'Fri, ' if self.__valid_day[self.FRIDAY] else '',
-                'Sat, ' if self.__valid_day[self.SATURDAY] else '',
-                'Sun, ' if self.__valid_day[self.SUNDAY] else '',
-                '*' if self._template[self.HOUR] is None
-                    else str(self._template[self.HOUR]),
-                '*' if self._template[self.MINUTE] is None
-                    else str(self._template[self.MINUTE]),
-                '*' if self._template[self.SECOND] is None
-                    else str(self._template[self.SECOND]))
+            'Mon, ' if self.__valid_day[self.MONDAY] else '',
+            'Tues, ' if self.__valid_day[self.TUESDAY] else '',
+            'Wed, ' if self.__valid_day[self.WEDNESDAY] else '',
+            'Thur, ' if self.__valid_day[self.THURSDAY] else '',
+            'Fri, ' if self.__valid_day[self.FRIDAY] else '',
+            'Sat, ' if self.__valid_day[self.SATURDAY] else '',
+            'Sun, ' if self.__valid_day[self.SUNDAY] else '',
+            '*' if self._template[self.HOUR] is None else str(
+                self._template[self.HOUR]),
+            '*' if self._template[self.MINUTE] is None else str(
+                self._template[self.MINUTE]),
+            '*' if self._template[self.SECOND] is None else str(
+                self._template[self.SECOND]))
 
     @property
     def monday(self):
@@ -695,7 +693,7 @@ class DayOfWeekTime(Moment):
         lastfired = []
         for i in range(len(now)):
             lastfired.append(now[i] if self._template[i] is None else
-                    self._template[i])
+                             self._template[i])
 
         # What day is today.
         weekday = calendar.weekday(lastfired[self.YEAR],
@@ -710,11 +708,11 @@ class DayOfWeekTime(Moment):
                 # If we had to move the day forward, minimize the '*' time
                 # values.
                 if i != 0:
-                    if self._template[self.HOUR] == None:
+                    if self._template[self.HOUR] is None:
                         lastfired[self.HOUR] = self.min_value[self.HOUR]
-                    if self._template[self.MINUTE] == None:
+                    if self._template[self.MINUTE] is None:
                         lastfired[self.MINUTE] = self.min_value[self.MINUTE]
-                    if self._template[self.SECOND] == None:
+                    if self._template[self.SECOND] is None:
                         lastfired[self.SECOND] = self.min_value[self.SECOND]
                 self._carry_the_minute(lastfired)
                 return lastfired
@@ -722,6 +720,6 @@ class DayOfWeekTime(Moment):
         raise ValueError('No days selected for WeekDayTime')
         return None
 
-  
+
 if __name__ == '__main__':
     pass
