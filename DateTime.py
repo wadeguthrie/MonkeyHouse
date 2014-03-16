@@ -1,17 +1,19 @@
 #! /usr/bin/python
 
-import calendar
-import datetime
-import re
-
 """
 This is needed because 'datetime' doesn't allow incomplete dates and times
 (needed for time templates in MkyHs).  While I was there, I included an
 increment.
 """
-
+import calendar
+import datetime
+import re
 
 class MomentFactory(object):
+    """
+    Generates an object of the appropriate Moment sub-class based on a string
+    that contains the time, date, and increment value.
+    """
     time = '(?P<time>[0-9\*]+:[0-9:\.\*]+)'
     days = '(?P<days>[A-Za-z, ]+)'
     date = '(?P<date>[^:]*[0-9\*][^:]*)'
@@ -30,7 +32,17 @@ class MomentFactory(object):
     increment = re.compile(' *' + inc + ' *$')
 
     @staticmethod
-    def MakeMoment(string):
+    def make_moment(string):
+        """Factory for Moment objects.
+
+        Generates an object of the appropriate Moment sub-class based on a
+        string that contains the time, date, and increment value.
+
+        Param:
+            - string - contains description of the time and date.
+
+        Returns: object that's a subclass of 'Moment'
+        """
         print '\tSetTemplate: checking \'%s\'' % string
 
         match = False if not string else MomentFactory.now.match(string)
@@ -263,7 +275,24 @@ class Moment(object):
         print 'Result:   %s' % result.__str__()
         return result
 
+    def _last_fired_from_template(self, now):
+        """Very basic value that matches the object's template for now
+
+        Fills-in missing part of the template with values from |now|.  Doesn't
+        worry about exceeding maxima for the various slots since this is
+        called by _first_occurrence which addresses that.
+
+        Params:
+            - now - the current time in the form of an array (one element,
+                each, for year, month, etc.)
+
+        Returns: filled-in template value in the form of an array (one
+        element, each, for year, month, etc.)
+        """
+        return None
+
     def _do_increment(self):
+        """Increment the time."""
         if self._lastfired is None or self._increment is None:
             return None
 
@@ -303,6 +332,7 @@ class Moment(object):
                                  firing_time[self.SECOND])
 
     def get_next_occurrence(self, now):
+        """Builds time after 'now' that matches the template."""
         if self._lastfired is None or self._increment is None:
             candidate = self._first_occurrence(now)
         else:
@@ -311,19 +341,19 @@ class Moment(object):
                 candidate = self._do_increment()
         return candidate
 
-    def _matches(self, input, template):
+    def _matches(self, token_value, template):
         """
-        input - array of tuple (token, value)
+        token_value - array of tuple (token, value)
         template - a list of token
 
-        Returns True if each token in input matches the token in the same
-        location in template; False, otherwise.  Matches a '*' in the input if
-        the template is ALPHA or NUMBER.
+        Returns True if each token in token_value matches the token in the
+        same location in template; False, otherwise.  Matches a '*' in the
+        input if the template is ALPHA or NUMBER.
         """
-        if len(input) != len(template):
+        if len(token_value) != len(template):
             return False
         for i in range(len(template)):
-            token, value = input[i]
+            token, unused = token_value[i]
             if token == self.ASTERISK:
                 if template[i] != self.ALPHA and template[i] != self.NUMBER:
                     return False
@@ -369,18 +399,23 @@ class Moment(object):
 
     @property
     def second(self):
+        """Template value for |second|."""
         return self._template[self.SECOND]
 
     @property
     def minute(self):
+        """Template value for |minute|."""
         return self._template[self.MINUTE]
 
     @property
     def hour(self):
+        """Template value for |hour|."""
         return self._template[self.HOUR]
 
 
 class DateTime(Moment):
+    """Moment sub-class composed of date and time."""
+    TOKEN, VALUE = range(2)  # Indexes into scanner.scan's tokens
     def __init__(self, date_string, time_string, increment_string):
         """
         If date and time are None, means 'now'
@@ -411,7 +446,6 @@ class DateTime(Moment):
             (r'\s+', None),   # Skip whitespace.
         ])
 
-        TOKEN, VALUE = range(2)  # Indexes into scanner.scan's tokens
         tokens, remainder = scanner.scan(date_string)
         if len(remainder) > 0:
             raise ValueError('String %s has odd character for a date' %
@@ -419,20 +453,20 @@ class DateTime(Moment):
 
         # e.g., 20 March 1920
         if self._matches(tokens, (self.NUMBER, self.ALPHA, self.NUMBER)):
-            self._template[self.DAY] = self._value(tokens[0][VALUE])
+            self._template[self.DAY] = self._value(tokens[0][self.VALUE])
             self._template[self.MONTH] = self._month_from_string(
-                tokens[1][VALUE])
-            self._template[self.YEAR] = self._value(tokens[2][VALUE])
+                tokens[1][self.VALUE])
+            self._template[self.YEAR] = self._value(tokens[2][self.VALUE])
 
         # e.g., March 20, 1920
         elif self._matches(tokens, (self.ALPHA,     # 0
                                     self.NUMBER,    # 1
                                     self.COMMA,     # 2
                                     self.NUMBER)):  # 3
-            self._template[self.DAY] = self._value(tokens[1][VALUE])
+            self._template[self.DAY] = self._value(tokens[1][self.VALUE])
             self._template[self.MONTH] = self._month_from_string(
-                tokens[0][VALUE])
-            self._template[self.YEAR] = self._value(tokens[3][VALUE])
+                tokens[0][self.VALUE])
+            self._template[self.YEAR] = self._value(tokens[3][self.VALUE])
 
         # e.g., 03/20/1920 or 20/03/1920
         elif self._matches(tokens, (self.NUMBER,    # 0
@@ -442,9 +476,9 @@ class DateTime(Moment):
                                     self.NUMBER)):  # 4
             # Default to American order: month/day/year and re-arrange if
             # obviously wrong.
-            self._template[self.DAY] = self._value(tokens[2][VALUE])
-            self._template[self.MONTH] = self._value(tokens[0][VALUE])
-            self._template[self.YEAR] = self._value(tokens[4][VALUE])
+            self._template[self.DAY] = self._value(tokens[2][self.VALUE])
+            self._template[self.MONTH] = self._value(tokens[0][self.VALUE])
+            self._template[self.YEAR] = self._value(tokens[4][self.VALUE])
 
         # e.g., 1920-03-20
         elif self._matches(tokens, (self.NUMBER,    # 0
@@ -452,9 +486,9 @@ class DateTime(Moment):
                                     self.NUMBER,    # 2
                                     self.DASH,      # 3
                                     self.NUMBER)):  # 4
-            self._template[self.DAY] = self._value(tokens[4][VALUE])
-            self._template[self.MONTH] = self._value(tokens[2][VALUE])
-            self._template[self.YEAR] = self._value(tokens[0][VALUE])
+            self._template[self.DAY] = self._value(tokens[4][self.VALUE])
+            self._template[self.MONTH] = self._value(tokens[2][self.VALUE])
+            self._template[self.YEAR] = self._value(tokens[0][self.VALUE])
 
         else:
             raise ValueError('String %s looks insufficiently like ' +
@@ -509,7 +543,9 @@ class DateTime(Moment):
             '*' if self._template[self.SECOND] is None else str(
                 self._template[self.SECOND]))
 
-    def _month_from_string(self, string):
+    @staticmethod
+    def _month_from_string(string):
+        """Returns a month number matching the month in |string|."""
         if string == '*':
             return None
 
@@ -522,14 +558,14 @@ class DateTime(Moment):
                              string)
         return mymonth[short_month]
 
-    def _value(self, string):
+    @staticmethod
+    def _value(string):
         """ Value of a string used in instantiation.
         """
         return None if string == '*' else int(string)
 
     def _last_fired_from_template(self, now):
-        # We start with the template (but with the '*' values filled-in with
-        # the current time - from 'now').
+        """Returns template with '*' values filled-in by |now|."""
         lastfired = []
         for i in range(len(now)):
             lastfired.append(now[i] if self._template[i] is None else
@@ -538,14 +574,17 @@ class DateTime(Moment):
 
     @property
     def day(self):
+        """Template value for |day|."""
         return self._template[self.DAY]
 
     @property
     def month(self):
+        """Template value for |month|."""
         return self._template[self.MONTH]
 
     @property
     def year(self):
+        """Template value for |year|."""
         return self._template[self.YEAR]
 
 
@@ -571,6 +610,14 @@ class FromArmedTime(DateTime):
             increment_string=increment_string)
 
     def get_next_occurrence(self, datetime_now):
+        """Builds time after 'now' that matches the template.
+
+        Param:
+            - datetime_now - datetime object that contains the value for now.
+
+        Returns: filled-in template, with overflows addressed, as a 'datetime'
+        object.
+        """
         firing_time = [None] * 6
         firing_time[self.YEAR] = datetime_now.year
         firing_time[self.MONTH] = datetime_now.month
@@ -611,6 +658,7 @@ class FromArmedTime(DateTime):
 
 
 class DayOfWeekTime(Moment):
+    """Moment sub-class composed of day of the week and time."""
     MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY = range(7)
     __day_of_week = {'mon': MONDAY, 'tue': TUESDAY, 'wed': WEDNESDAY,
                      'thu': THURSDAY, 'fri': FRIDAY, 'sat': SATURDAY,
@@ -660,36 +708,45 @@ class DayOfWeekTime(Moment):
 
     @property
     def monday(self):
+        """Template value for 'Monday'."""
         return self.__valid_day[self.MONDAY]
 
     @property
     def tuesday(self):
+        """Template value for 'Tuesday'."""
         return self.__valid_day[self.TUESDAY]
 
     @property
     def wednesday(self):
+        """Template value for 'Wednesday'."""
         return self.__valid_day[self.WEDNESDAY]
 
     @property
     def thursday(self):
+        """Template value for 'Thursday'."""
         return self.__valid_day[self.THURSDAY]
 
     @property
     def friday(self):
+        """Template value for 'Friday'."""
         return self.__valid_day[self.FRIDAY]
 
     @property
     def saturday(self):
+        """Template value for 'Saturday'."""
         return self.__valid_day[self.SATURDAY]
 
     @property
     def sunday(self):
+        """Template value for 'Sunday'."""
         return self.__valid_day[self.SUNDAY]
 
     def _last_fired_from_template(self, now):
-        # We start with the template (but with the '*' values filled-in with
-        # the current time).  It's expected that day, month, and year will be
-        # 'None' for the DayOfWeekTime class.  That's OK.
+        """Returns template with '*' values filled-in by |now|.
+        
+        It's expected that day, month, and year will be 'None' for the
+        DayOfWeekTime class.  That's OK.
+        """
         lastfired = []
         for i in range(len(now)):
             lastfired.append(now[i] if self._template[i] is None else
@@ -718,7 +775,6 @@ class DayOfWeekTime(Moment):
                 return lastfired
 
         raise ValueError('No days selected for WeekDayTime')
-        return None
 
 
 if __name__ == '__main__':

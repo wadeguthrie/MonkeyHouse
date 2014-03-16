@@ -71,7 +71,7 @@ class TriggerTestCase(unittest.TestCase):
           'type': 'message',
           'template': {"from": "groucho", "to": "harpo"}
         }
-        trigger = Trigger.TriggerFactory.NewTrigger(
+        trigger = Trigger.TriggerFactory.new_trigger(
                 data, self.__executive, self.__parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
 
@@ -124,7 +124,7 @@ class TriggerTestCase(unittest.TestCase):
           'type': 'message',
           'template': {'from': 'groucho', 'what': [], 'to': 'harpo'}
         }
-        trigger = Trigger.TriggerFactory.NewTrigger(
+        trigger = Trigger.TriggerFactory.new_trigger(
                 data, self.__executive, self.__parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
 
@@ -157,7 +157,7 @@ class TriggerTestCase(unittest.TestCase):
           'template': {"from": "groucho",
                        "foo": ">3"}
         }
-        trigger = Trigger.TriggerFactory.NewTrigger(
+        trigger = Trigger.TriggerFactory.new_trigger(
                 data, self.__executive, self.__parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
 
@@ -195,7 +195,7 @@ class TriggerTestCase(unittest.TestCase):
           'template': {'from': 'groucho',
                        'foo': ['<3', '==7', '>12']}
         }
-        trigger = Trigger.TriggerFactory.NewTrigger(
+        trigger = Trigger.TriggerFactory.new_trigger(
                 data, self.__executive, self.__parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
 
@@ -232,7 +232,7 @@ class TriggerTestCase(unittest.TestCase):
           'template': {'from': 'the_switch',
                        'announce_state': {'value': 'on'}}
         }
-        trigger = Trigger.TriggerFactory.NewTrigger(
+        trigger = Trigger.TriggerFactory.new_trigger(
                 data, self.__executive, self.__parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
 
@@ -268,39 +268,28 @@ class TriggerTestCase(unittest.TestCase):
           'type': 'timer', 
           'time': 3 # TODO
         }
-        trigger = Trigger.TriggerFactory.NewTrigger(
-                data, self.__executive, self.__parent, Trigger.Trigger.FIRING)
-        assert not trigger.is_triggered()
-
-    def testElapsedTimeTrigger(self):
-        print '\n----- testElapsedTimeTrigger -----'
-        data = {
-          'name': 'foo', 
-          'type': 'elapsed-time', 
-          'time': 3 # TODO
-        }
-        trigger = Trigger.TriggerFactory.NewTrigger(
+        trigger = Trigger.TriggerFactory.new_trigger(
                 data, self.__executive, self.__parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
 
     def testAndTrigger(self):
         print '\n----- testAndTrigger -----'
         data = { 'name': 'foo', 'type': 'and'}
-        trigger = Trigger.TriggerFactory.NewTrigger(
+        trigger = Trigger.TriggerFactory.new_trigger(
                 data, self.__executive, self.__parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
 
     def testOrTrigger(self):
         print '\n----- testOrTrigger -----'
         data = { 'name': 'foo', 'type': 'or'}
-        trigger = Trigger.TriggerFactory.NewTrigger(
+        trigger = Trigger.TriggerFactory.new_trigger(
                 data, self.__executive, self.__parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
 
     def testNotTrigger(self):
         print '\n----- testNotTrigger -----'
         data = { 'name': 'foo', 'type': 'not'}
-        trigger = Trigger.TriggerFactory.NewTrigger(
+        trigger = Trigger.TriggerFactory.new_trigger(
                 data, self.__executive, self.__parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
 

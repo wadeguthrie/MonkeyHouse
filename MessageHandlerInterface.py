@@ -2,8 +2,7 @@
 
 
 class MessageHandlerInterface(object):
-    """
-    """
+    """Base class for, well, MessageHandlers."""
 
     def on_message(self, message):
         pass
