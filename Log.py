@@ -1,12 +1,15 @@
 #! /usr/bin/python
 
+"""
+Manages the MonkeyHouse Log.
+"""
+
 import datetime
 import json
 import os
 
 
 class Log(object):
-
     """ Logs statements for MonkeyHouse.
 
     Keeps the log as a collection of files in a circular list.  Old files are
@@ -152,6 +155,7 @@ class Log(object):
 
             log.log(Log.Log.ERROR, Log.Log.ERROR, {'string': 'whatever'})
 
+        Returns: Nothing.
         """
         now = datetime.datetime.now()
 
@@ -193,8 +197,10 @@ class Log(object):
     def set_executive(self, executive):
         """ Sets the executive for the log.
 
+        Params:
             executive (Executive) - Used to retrieve current status.
 
+        Returns: Nothing.
         """
         self.__executive = executive
 
@@ -207,8 +213,10 @@ class Log(object):
         easy).  Gets the current state, in a JSON-equivalent data structure,
         from the executive and writes it to the file.
 
-        now (datetime) - The current time; used for naming the new file.
+        Params:
+            - now (datetime) - The current time; used for naming the new file.
 
+        Returns: Nothing.
         """
         # File.
         filename = 'mkyhs-log-%04d-%02d%02d-%02d%02d-%02d-%06d' % (
@@ -239,14 +247,15 @@ class Log(object):
     def __write_to_file(self, string):
         """Writes to the log file and keeps track of statistics.
 
-        string (string) - The string to write to the file.
+        Params:
+            - string (string) - The string to write to the file.
 
+        Returns: Nothing.
         """
         self.file.write(string)
         self.file.flush()
         self.bytes_this_file += len(string)
         self.bytes_total += len(string)
 
-# Main
 if __name__ == '__main__':
     pass

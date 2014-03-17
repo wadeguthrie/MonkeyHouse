@@ -10,6 +10,11 @@ import DateTime
 import Log
 import Trigger
 
+# TODO: code-up 'arm' and test it
+# TODO: Then: Include the message test in the user's guide
+# TODO: After: Draw-up arrays in the incoming message
+# TODO: Later: Test leading '\'
+
 class TimerTrigger(Trigger.Trigger):
     """A MonkeyHouse Timer Trigger.
 
@@ -36,7 +41,7 @@ class TimerTrigger(Trigger.Trigger):
             - trigger_type - FIRING, DEFIRING, or FIRING_DEFIRING
         """
         print 'TimerTrigger ctor'
-        self.__template = DateTime.MomentFactory.make_moment(data['time'])
+        self.__template = DateTime.MomentFactory.new_moment(data['time'])
         if self.__template is None:
             raise ValueException('%s doesn\'t look like a moment' %
                     data['time'])
@@ -52,7 +57,14 @@ class TimerTrigger(Trigger.Trigger):
         pass
 
     def on_timeout(self, time):
-        """Triggers the trigger."""
+        """Triggers the trigger.
+
+        Params:
+            - time - datatime object describing the date/time that the trigger
+                is firing.
+        
+        Returns: Nothing.
+        """
         # TODO: If on_timeout changes the state of the TimerTrigger, it
         #   Logs and calls the parent's on_trigger_change method.
         pass

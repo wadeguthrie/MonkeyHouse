@@ -18,9 +18,10 @@ class MessageTemplateFactory(object):
     """Creates Message templates.
 
     A MessageTemplate is an object that contains a partial MonkeyHouse Message
-    (which is a JSON-equivalent data structure) and code to determine whether
-    another Message matches the partial Message stored.  The rules are defined
-    by the MonkeyHouse Design Specification.
+    (which is a JSON-equivalent data structure -- see the MonkeyHouse design
+    specification for details) and code to determine whether another Message
+    matches the partial Message stored.  The rules are defined by the
+    MonkeyHouse Design Specification.
     """
     re_slash = re.compile(r'\\(.*)')
     re_le = re.compile(r'<=(.*)')
@@ -87,7 +88,7 @@ class MessageTemplate(object):
 
     A MessageTemplate is an object that contains a partial MonkeyHouse Message
     (which is a JSON-equivalent data structure) and code to determine whether
-    another Message matches the partial Message stored.  The rules are defined
+    another Message matches the stored partial Message.  The rules are defined
     by the MonkeyHouse Design Specification.
     """
 
@@ -100,8 +101,7 @@ class MessageTemplate(object):
 
     @staticmethod
     def _value(string):
-        """
-        Returns a numberic value for |string|, if possible.
+        """Returns a numberic value for |string|, if possible.
         
         Figures out what kind of thing |string| represents (a float, an int,
         or just a string) and returns that.

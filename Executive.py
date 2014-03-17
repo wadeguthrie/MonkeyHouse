@@ -1,5 +1,11 @@
 #! /usr/bin/python
 
+"""
+The Executive is the engine that runs MonkeyHouse.  Its a 'select' loop that
+waits for events or timeouts.  When those occur, the Executive delivers the
+events to the objects waiting for them.  It also manages a Message queue,
+accepting Messages and delivering them.
+"""
 
 class Executive(object):
     """
@@ -17,6 +23,7 @@ class Executive(object):
         self.log = log
 
     def get_state(self):
+        """Returns the state of the MonkeyHouse Executive."""
         state = {
             "state": self.__state_str[self.state],
             "targets": []

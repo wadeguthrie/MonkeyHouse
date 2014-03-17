@@ -11,8 +11,9 @@ import re
 
 class MomentFactory(object):
     """
-    Generates an object of the appropriate Moment sub-class based on a string
-    that contains the time, date, and increment value.
+    Generates an object of the appropriate Moment sub-class (e.g., DateTime or
+    DayTime) based on a string that contains the time, date, and increment
+    value.
     """
     time = '(?P<time>[0-9\*]+:[0-9:\.\*]+)'
     days = '(?P<days>[A-Za-z, ]+)'
@@ -32,7 +33,7 @@ class MomentFactory(object):
     increment = re.compile(' *' + inc + ' *$')
 
     @staticmethod
-    def make_moment(string):
+    def new_moment(string):
         """Factory for Moment objects.
 
         Generates an object of the appropriate Moment sub-class based on a
@@ -116,7 +117,7 @@ class MomentFactory(object):
                             increment_string=inc_string)
 
         print 'FOUND NOTHING'
-        raise ValueError('String %s does not seem to contain a time/date' %
+        raise ValueError('\'%s\' does not seem to contain a time/date' %
                          string)
 
 
@@ -137,7 +138,8 @@ class Moment(object):
         self._last_occurrence = None
         self._lastfired = None
 
-        # self.SECOND, .MINUTE, .HOUR, .DAY, .MONTH, and .YEAR
+        # _template contains self.SECOND, .MINUTE, .HOUR, .DAY, .MONTH, and
+        # .YEAR
         self._template = [None] * len(self.min_value)
         self._increment = None
         if increment_string is not None:
@@ -159,7 +161,7 @@ class Moment(object):
                 raise ValueError('Increment %s doesn\'t look right' %
                                  increment_string)
 
-        print '__time_from_string: starting with \'%s\'' % time_string
+        print 'time from string: starting with \'%s\'' % time_string
         if time_string is not None:
             pieces = time_string.split(':')
 
@@ -177,14 +179,28 @@ class Moment(object):
             else:
                 self._template[self.SECOND] = 0
 
-        print '__time_from_string: %r:%r:%r' % (self._template[self.HOUR],
-                                                self._template[self.MINUTE],
-                                                self._template[self.SECOND])
+        print 'time from string: %r:%r:%r' % (self._template[self.HOUR],
+                                              self._template[self.MINUTE],
+                                              self._template[self.SECOND])
 
     def _first_occurrence(self, datetime_now):
-        """
-        datetime_now - datetime object.
-        returns - datetime object.
+        """Common code to generate the first datetime from the template.
+
+        This uses the Moment's template (ignoring the increment unless there's
+        no other part to the template) to generate a datatime object
+        corresponding to the earliest moment greater than or equal to the
+        current one (described by the parameter, |datetime_now|).  This method
+        represents the code that is common among the child classes with the
+        child-class-specific code being in the |_last_fired_from_template|
+        method.
+
+        Params:
+            datetime_now - datetime object representing the earliest value to
+            be returned by this method.
+
+        Returns - datetime object that is the earliest value matching the
+            template that is greater than or equal to |datetime_now|.  Returns
+            None if no value meets both those criteria.
         """
 
         now = [None, None, None, None, None, None]
@@ -200,6 +216,8 @@ class Moment(object):
                                                      now[self.HOUR],
                                                      now[self.MINUTE],
                                                      now[self.SECOND])
+
+        # Fill-in holes in template with |now| values.
         print 'Template: %r' % self
         self._lastfired = self._last_fired_from_template(now)
         print 'Start:    %d-%d-%d %02d:%02d:%02d' % (
@@ -209,13 +227,17 @@ class Moment(object):
             self._lastfired[self.HOUR],
             self._lastfired[self.MINUTE],
             self._lastfired[self.SECOND])
-        # Go from year to second:
+
+        # Ensure that the lastfired time is >= now: increment if necessary
+        # (note that if you increment an element, you need to minimize the
+        # wildcard entries that are less than the incremented value).  To do
+        # that, go from year, down to second:
         #  - if it's < now, increment the next '*' above &
         #    minimize every '*' below -- you're done
         #  - if it's == now, keep going
         #  - if it's > now, we're good -- you're done
 
-        # What's the last day of the current month?
+        # Need to know the last day of the current month.
         self.max_value[self.DAY] = calendar.monthrange(
             self._lastfired[self.YEAR], self._lastfired[self.MONTH])[1]
         previous_star = []  # Keep track of the '*' values in the _template.
@@ -228,7 +250,7 @@ class Moment(object):
                 previous_star.append(i)
 
             # If we'd already found a moment less than 'now', set all
-            # future '*' values to their minimum.
+            # future (i.e., smaller) '*' values to their minimum.
             if found:
                 if self._template[i] is None:
                     self._lastfired[i] = self.min_value[i]
@@ -276,11 +298,9 @@ class Moment(object):
         return result
 
     def _last_fired_from_template(self, now):
-        """Very basic value that matches the object's template for now
+        """Fills-in missing part of the template with values from |now|.
 
-        Fills-in missing part of the template with values from |now|.  Doesn't
-        worry about exceeding maxima for the various slots since this is
-        called by _first_occurrence which addresses that.
+        This method needs to be overridden by child classes.
 
         Params:
             - now - the current time in the form of an array (one element,
@@ -292,7 +312,18 @@ class Moment(object):
         return None
 
     def _do_increment(self):
-        """Increment the time."""
+        """Increment the last fired time using the template.
+        
+        To add the increment, save the pre-carried version as 'last_fired' but
+        put the current firing time as 'firing_time' and carry that value.
+        This allows 1 month to be added to 30 January (and that result to be
+        rounded up to 2 March) and then another month to be added (and
+        _that_ result to be rounded up to 30 March).
+
+        Returns: datetime object that is one increment of the last firing
+        time (None if there's no previous firing time or no increment).
+        """
+
         if self._lastfired is None or self._increment is None:
             return None
 
@@ -304,11 +335,6 @@ class Moment(object):
             self._lastfired[self.MINUTE],
             self._lastfired[self.SECOND])
 
-        # Add the increment.  Save the pre-carried version as 'last_fired' but
-        # put the current firing time as 'firing_time' and carry that value.
-        # This allows 1 month to be added to 30 January (and that result to be
-        # rounded up to 2 March) and then another month to be added (and
-        # _that_ result to be rounded up to 30 March).
         print 'Increment:%d-%d-%d %02d:%02d:%02d' % (
             self._increment[self.YEAR],
             self._increment[self.MONTH],
@@ -331,20 +357,35 @@ class Moment(object):
                                  firing_time[self.MINUTE],
                                  firing_time[self.SECOND])
 
-    def get_next_occurrence(self, now):
-        """Builds time after 'now' that matches the template."""
+    def get_next_occurrence(self, datetime_now):
+        """Builds time after 'datetime_now' that matches the template.
+
+        If the template includes both an initial component (e.g., a DateTime
+        or a day-of-week/Time) and an incremental component, this method
+        applies the initial component only if it hasn't been applied
+        previously (i.e., if |_lastfired| is None).  Otherwise, it applies the
+        incremental component.
+
+        Params:
+            - datetime_now - datetime object after which the next moment
+                should be
+
+        Returns: the earliest datetime object that is >= datetime_now.
+        """
         if self._lastfired is None or self._increment is None:
-            candidate = self._first_occurrence(now)
+            candidate = self._first_occurrence(datetime_now)
         else:
             candidate = self._do_increment()
-            while candidate < now:
+            while candidate < datetime_now:
                 candidate = self._do_increment()
         return candidate
 
     def _matches(self, token_value, template):
-        """
-        token_value - array of tuple (token, value)
-        template - a list of token
+        """Checks to see if a time matches a template.
+
+        Params:
+            - token_value - array of tuple (token, value)
+            - template - a list of token
 
         Returns True if each token in token_value matches the token in the
         same location in template; False, otherwise.  Matches a '*' in the
@@ -363,19 +404,31 @@ class Moment(object):
 
     @staticmethod
     def _carry_the_minute(moment):
-        """
+        """Fixes a moment that has overflowed values (like 67 minutes).
+
         Well, it's really 'carry_the_second_and_the_minute_and_...'
+
+        This ignores the template values so it can only be used in contexts
+        where the template doesn't apply (like adding a fixed increment to a
+        time).
+
+        Look, from second to year, for values that exceed their maximum.
+        When you find one, subtract out the max value and increment the next
+        higher item.  For example, if your month is 13, subtract 12 and add
+        one to the year.
+
+        May have to go through a few times when changing month or year
+        changes the number of days in a month.
+
+        Params:
+            - moment - array of date/time elements
+
+        Returns: array of legal date/time elements that represents the same
+            date/time as |moment|.
         """
         Moment.max_value[Moment.DAY] = calendar.monthrange(
             moment[Moment.YEAR], moment[Moment.MONTH])[1]
         found_one = True  # Just for the first time, through.
-        # Look, from second to year, for values that exceed their maximum.
-        # When you find one, subtract out the max value and increment the next
-        # higher item.  For example, if your month is 13, subtract 12 and add
-        # one to the year.
-        #
-        # May have to go through a few times when changing month or year
-        # changes the number of days in a month.
 
         units = {Moment.YEAR: 'year',
                  Moment.MONTH: 'month',
@@ -426,7 +479,7 @@ class DateTime(Moment):
                 place of zero or more slots (but, beware -- we assume various
                 default positions for day, month, and year based on the format
                 and the values in the positions).  Year is expected to be 4
-                digits.
+                digits and time is expected in 24 hour format.
         """
         super(DateTime, self).__init__(time_string,
                                        increment_string)
@@ -560,8 +613,7 @@ class DateTime(Moment):
 
     @staticmethod
     def _value(string):
-        """ Value of a string used in instantiation.
-        """
+        """ Value of a string used in instantiation."""
         return None if string == '*' else int(string)
 
     def _last_fired_from_template(self, now):
@@ -592,25 +644,24 @@ class FromArmedTime(DateTime):
     """
     This is _just_ like a DateTime (now) except that _do_increment starts
     from the time it's called rather than from the last time it was called.
+    This is typically used in a de-firing trigger to represent elapsed time.
     """
     def __init__(self, increment_string):
         """
         If date and time are None, means 'now'
         Convert time and date strings into our internal representation.
 
-        Args:
-          date_string  Date in any number of formats.  A '*' may take the
-                place of zero or more slots (but, beware -- we assume various
-                default positions for day, month, and year based on the format
-                and the values in the positions).  Year is expected to be 4
-                digits.
+        Params:
+          - increment_string - string that looks like '+#element' where '#' is
+            a number and 'element' is a time/date element (e.g., 'hours', or
+            'days')
         """
         super(FromArmedTime, self).__init__(
             date_string=None, time_string=None,
             increment_string=increment_string)
 
     def get_next_occurrence(self, datetime_now):
-        """Builds time after 'now' that matches the template.
+        """Builds time after 'datetime_now' that matches the template.
 
         Param:
             - datetime_now - datetime object that contains the value for now.
@@ -658,7 +709,7 @@ class FromArmedTime(DateTime):
 
 
 class DayOfWeekTime(Moment):
-    """Moment sub-class composed of day of the week and time."""
+    """Moment sub-class composed of a list of days of the week and a time."""
     MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY = range(7)
     __day_of_week = {'mon': MONDAY, 'tue': TUESDAY, 'wed': WEDNESDAY,
                      'thu': THURSDAY, 'fri': FRIDAY, 'sat': SATURDAY,

@@ -12,11 +12,6 @@ import MessageHandlerInterface
 import MessageTrigger
 import TimerTrigger
 
-# TODO: code-up 'arm' and test it
-# TODO: Then: Include the message test in the user's guide
-# TODO: After: Draw-up arrays in the incoming message
-# TODO: Later: Test leading '\'
-
 class TriggerFactory(object):
     """Builds MonkeyHouse Triggers of the type described in text input."""
     __factory = {
@@ -36,9 +31,9 @@ class TriggerFactory(object):
         Param:
             executive - Executive object
             parent - Trigger or Rule object
-            trigger_type - string object
+            trigger_type - string matching the one of the keys to |__factory|
 
-        Returns: Trigger.
+        Returns: Trigger object.
         """
         if 'type' not in data:
             raise ValueError('No "type" in data')

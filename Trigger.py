@@ -1,7 +1,7 @@
 #! /usr/bin/python
 
 """
-Implements Message Triggers for MonkeyHouse.
+Implements Trigger base class for MonkeyHouse.
 """
 
 import re
