@@ -27,7 +27,7 @@ class Trigger(object): # MessageHandlerInterface):
 
     def __init__(self, data, executive, parent, trigger_type):
         """
-            data (array) - this is a JSON-equivalent data structure.
+            data (dict) - this is a JSON-equivalent data structure.
             executive (Executive)
             parent (Trigger or Rule) - Trigger or Rule that contains this
                 object.

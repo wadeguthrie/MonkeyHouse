@@ -678,7 +678,7 @@ class DayOfWeekTime(Moment):
             print 'Found day %s' % day
             # Strip whitespace, take the first 3 characters, lower-case them.
             short_day = day.strip()[:3].lower()
-            print '\tshortened: \'%s\'', short_day
+            print '\tshortened: \'%s\'' % short_day
             if short_day in self.__day_of_week:
                 self.__valid_day[self.__day_of_week[short_day]] = True
             else:

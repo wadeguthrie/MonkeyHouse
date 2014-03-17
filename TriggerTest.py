@@ -267,7 +267,7 @@ class TriggerTestCase(unittest.TestCase):
         data = {
           'name': 'foo', 
           'type': 'timer', 
-          'time': 3 # TODO
+          'time': 'Wednesday 12:00:00'
         }
         trigger = TriggerFactory.TriggerFactory.new_trigger(
                 data, self.__executive, self.__parent, Trigger.Trigger.FIRING)

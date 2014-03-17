@@ -10,14 +10,6 @@ import DateTime
 import Log
 import Trigger
 
-# TODO: time template looks like: [anchor][+increment] where 'anchor' is a
-# time/date with, possibly, items missing and 'increment' is a number and a
-# time element (e.g., week, months, minutes -- note singular and plural).  The
-# anchor is the initial time for the trigger and the increment is added for
-# subsequent times.  Without the increment, just match the next missing value
-# in 'anchor'.  Without 'anchor', the initial time is 'Now+increment'.  An
-# empty string means 'Now'.  Note, 'elapsed time' is no longer necessary.
-# TODO: move TimeTrigger out into its own file.
 class TimerTrigger(Trigger.Trigger):
     """A MonkeyHouse Timer Trigger.
 
@@ -34,10 +26,23 @@ class TimerTrigger(Trigger.Trigger):
     """
     def __init__(self, data, executive, parent, trigger_type):
         super(TimerTrigger, self).__init__(data, executive, parent,
-                                             trigger_type)
+                                           trigger_type)
+        """
+        Params:
+            - data (dict) - this is a JSON-equivalent data structure.
+              Includes 'name', 'type'='timer', and 'time'
+            - executive - Executive
+            - parent - LogicalTrigger or Rule to report trigger changes
+            - trigger_type - FIRING, DEFIRING, or FIRING_DEFIRING
+        """
         print 'TimerTrigger ctor'
-        self.__time = data['time']
+        self.__template = DateTime.MomentFactory.make_moment(data['time'])
+        if self.__template is None:
+            raise ValueException('%s doesn\'t look like a moment' %
+                    data['time'])
         # TODO: executive's register_timer_handler(self).
+        # TODO: all the factories should have the same structure: make_xxx or
+        #   new_xxx or whatever_xxx
 
 
     def arm(self):
