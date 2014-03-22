@@ -8,24 +8,45 @@ import re
 
 import Log
 import Trigger
+import TriggerFactory
 
-class AndTrigger(Trigger.Trigger):
+class LogicalTrigger(Trigger.Trigger):
+    """
+    Base class for logical triggers.  Handles instantiation of sub-triggers
+    and passing 'arm' down the ladder.
+    """
+    def __init__(self, data, executive, parent, trigger_type):
+        super(LogicalTrigger, self).__init__(data, executive, parent,
+                                             trigger_type)
+        self._triggers = []
+        if 'sub-triggers' in data:
+            for trigger in data['sub-triggers']:
+                self._triggers.append(
+                        TriggerFactory.TriggerFactory.new_trigger(
+                            trigger, executive, self,
+                            Trigger.Trigger.FIRING_DEFIRING))
+        if 'sub-trigger' in data:
+            self._triggers.append(TriggerFactory.TriggerFactory.new_trigger(
+                data['sub-trigger'], executive, self,
+                Trigger.Trigger.FIRING_DEFIRING))
+
+    def arm(self):
+        """Tells the trigger to be ready to trigger."""
+        for trigger in self._triggers:
+            trigger.arm()
+
+class AndTrigger(LogicalTrigger):
     """
     This trigger goes into the triggered state if _all_ of it's constituent
     triggers are in the triggered state.
     """
     def __init__(self, data, executive, parent, trigger_type):
         super(AndTrigger, self).__init__(data, executive, parent,
-                                             trigger_type)
+                                         trigger_type)
         print 'AndTrigger ctor'
-        # TODO: "sub-triggers" : [ <trigger>, <trigger>, ... <trigger> ]
-        # or just one trigger for "operation":"not"
-        # TODO: instantiate sub-triggers(FIRING_DEFIRING)
-
-    def arm(self):
-        """Tells the trigger to be ready to trigger."""
-        # Calls constituent Trigger's arm methods.
-        pass
+        if len(self._triggers) < 2:
+            raise ValueError('"And" trigger needs at least 2 sub-triggers: %r'
+                    % data)
 
     def on_trigger_change(self, firing, triggered):
         """Called by a constituent trigger when _that_ trigger changes state.
@@ -33,17 +54,13 @@ class AndTrigger(Trigger.Trigger):
         When called, this trigger will check with its constituent triggers to
         determine whether this trigger should change state.
         """
-        # TODO: called by their constituent Triggers.  The Trigger will call
-        #   is_triggered on its constituent Triggers, determine whether or
-        #   not this Trigger is triggered, save the current state of the
-        #   Trigger, and if there's a state change, log and call the
-        #   on_trigger_change(is_triggered()) method of its parent (whether
-        #   it's parent is a Trigger or a Rule).  Active Triggers call
-        #   parent's on_trigger_change.
-        pass
+        for trigger in self._triggers:
+            if self._triggered == trigger.is_triggered():
+                return # _this_ trigger didn't change
 
+        self._set_trigger(not self._triggered)
 
-class OrTrigger(Trigger.Trigger):
+class OrTrigger(LogicalTrigger):
     """
     This is a MonkeyHouse Trigger that goes into the triggered state if _any_
     of its constituent triggers goes into the triggered state.
@@ -52,29 +69,22 @@ class OrTrigger(Trigger.Trigger):
         super(OrTrigger, self).__init__(data, executive, parent,
                                              trigger_type)
         print 'OrTrigger ctor'
-        # TODO: "sub-triggers" : [ <trigger>, <trigger>, ... <trigger> ]
-        # or just one trigger for "operation":"not"
-        # TODO: instantiate sub-triggers(FIRING_DEFIRING)
-
-    def arm(self):
-        """Tells the trigger to be ready to trigger."""
-        # Calls constituent Trigger's arm methods.
-        pass
+        if len(self._triggers) < 2:
+            raise ValueError('"Or" trigger needs at least 2 sub-triggers: %r'
+                    % data)
 
     def on_trigger_change(self, firing, triggered):
         """Called by a constituent trigger when _that_ trigger changes state.
+
+        When called, this trigger will check with its constituent triggers to
+        determine whether this trigger should change state.
         """
-        # TODO: called by their constituent Triggers.  The Trigger will call
-        #   is_triggered on its constituent Triggers, determine whether or
-        #   not this Trigger is triggered, save the current state of the
-        #   Trigger, and if there's a state change, log and call the
-        #   on_trigger_change(is_triggered()) method of its parent (whether
-        #   it's parent is a Trigger or a Rule).  Active Triggers call
-        #   parent's on_trigger_change.
-        pass
+        for trigger in self._triggers:
+            if self._triggered != trigger.is_triggered():
+                self._set_trigger(not self._triggered)
+                break  # Only change once
 
-
-class NotTrigger(Trigger.Trigger):
+class NotTrigger(LogicalTrigger):
     """
     This is a MonkeyHouse Trigger that goes into the triggered state if its
     constituent trigger goes into the non-triggered state.  This really only
@@ -84,26 +94,15 @@ class NotTrigger(Trigger.Trigger):
         super(NotTrigger, self).__init__(data, executive, parent,
                                              trigger_type)
         print 'NotTrigger ctor'
-        # TODO: "sub-triggers" : [ <trigger>, <trigger>, ... <trigger> ]
-        # or just one trigger for "operation":"not"
-        # TODO: instantiate sub-triggers(FIRING_DEFIRING)
-
-    def arm(self):
-        """Tells the trigger to be ready to trigger."""
-        # Calls constituent Trigger's arm methods.
-        pass
+        if len(self._triggers) != 1:
+            raise ValueError('"Not" trigger needs exactly one sub-trigger: %r'
+                    % data)
 
     def on_trigger_change(self, firing, triggered):
         """Called by a constituent trigger when _that_ trigger changes state.
         """
-        # TODO: called by their constituent Triggers.  The Trigger will call
-        #   is_triggered on its constituent Triggers, determine whether or
-        #   not this Trigger is triggered, save the current state of the
-        #   Trigger, and if there's a state change, log and call the
-        #   on_trigger_change(is_triggered()) method of its parent (whether
-        #   it's parent is a Trigger or a Rule).  Active Triggers call
-        #   parent's on_trigger_change.
-        pass
+        if self._triggered == self._triggers[0].is_triggered():
+            self._set_trigger(not self._triggered)
 
 if __name__ == '__main__':
     pass

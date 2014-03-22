@@ -9,7 +9,6 @@ import re
 import Log
 import MessageHandlerInterface
 
-# TODO: code-up 'arm' and test it
 # TODO: Then: Include the message test in the user's guide
 # TODO: After: Draw-up arrays in the incoming message
 # TODO: Later: Test leading '\'
@@ -35,19 +34,20 @@ class Trigger(object): # MessageHandlerInterface):
 
         """
         print 'Trigger ctor'
-        self.__name = data['name']
-        self.__executive = executive
-        self.__parent = parent
-        self.__triggered = False
+        self._name = data['name']
         self.__trigger_type = trigger_type
+        self._executive = executive
+        self._parent = parent
+        self._triggered = False
+        self._armed = False
 
-    def arm(self):
+    def arm(self, armed):
         """Tells the trigger to be ready to trigger."""
-        pass
+        self._armed = armed
 
     def is_triggered(self):
         """Returns True if the Trigger has been triggered."""
-        return self.__triggered
+        return self._triggered
 
     def on_message(self, message):
         """Handles incoming Message from MonkeyHouse."""
@@ -57,18 +57,26 @@ class Trigger(object): # MessageHandlerInterface):
 
     def _set_trigger(self, triggered):
         """Triggers or de-triggers a MonkeyHouse Trigger."""
-        if self.__triggered != triggered:
-            self.__triggered = triggered
-            self.__parent.on_trigger_change(self.__trigger_type,
-                                            self.__triggered)
-            self.__executive.log.log(Log.Log.INFO,
-                                     Log.Log.TRIGGER,
-                                     {'type': 'trigger',
-                                      'name': self.__name,
-                                      'trigger': 'activated' if triggered else
-                                        'deactivated',
-                                      'trigger-type': self.__trigger_type_str[
-                                          self.__trigger_type]})
+        if self._triggered == triggered:
+            return
+
+        self._triggered = triggered
+        self._executive.log.log(Log.Log.INFO,
+                                Log.Log.TRIGGER,
+                                {'type': 'trigger',
+                                  'name': self._name,
+                                  'trigger': 'activated' if triggered else
+                                    'deactivated',
+                                  'trigger-type': self.__trigger_type_str[
+                                      self.__trigger_type],
+                                  'armed' : 'armed' if self._armed else
+                                    'disarmed'})
+
+        # Go ahead and change state if we're not armed but don't report the
+        # state change.
+        if self._armed:
+            self._parent.on_trigger_change(self.__trigger_type,
+                                           self._triggered)
 
 if __name__ == '__main__':
     pass

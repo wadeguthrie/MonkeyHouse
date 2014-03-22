@@ -4,13 +4,13 @@
 Implements Timer Triggers for MonkeyHouse.
 """
 
+import datetime
 import re
 
 import DateTime
 import Log
 import Trigger
 
-# TODO: code-up 'arm' and test it
 # TODO: Then: Include the message test in the user's guide
 # TODO: After: Draw-up arrays in the incoming message
 # TODO: Later: Test leading '\'
@@ -46,15 +46,14 @@ class TimerTrigger(Trigger.Trigger):
             raise ValueException('%s doesn\'t look like a moment' %
                     data['time'])
         # TODO: executive's register_timer_handler(self).
-        # TODO: all the factories should have the same structure: make_xxx or
-        #   new_xxx or whatever_xxx
 
 
-    def arm(self):
-        """Tells the trigger to be ready to trigger."""
-        # TODO: Re-calculates the next time that this trigger is valid and
-        #   calls the executive's register_timer_handler(self).
-        pass
+    def arm(self, armed):
+        """Tells the trigger to get ready to trigger."""
+        self._armed = armed
+        when = self.__template.get_next_occurrence(datetime.datetime.now())
+        if when is not None:
+            self._executive.register_timer_handler(self)
 
     def on_timeout(self, time):
         """Triggers the trigger.
@@ -65,9 +64,7 @@ class TimerTrigger(Trigger.Trigger):
         
         Returns: Nothing.
         """
-        # TODO: If on_timeout changes the state of the TimerTrigger, it
-        #   Logs and calls the parent's on_trigger_change method.
-        pass
+        self._set_trigger(triggered=True)
 
 if __name__ == '__main__':
     pass

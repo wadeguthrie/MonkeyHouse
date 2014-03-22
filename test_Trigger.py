@@ -11,6 +11,8 @@ import Log
 import Trigger
 import TriggerFactory
 
+# TODO: test 'arm'
+# TODO: test invalid triggers
 
 # Basis for mocks found below.
 class ParentFake(object):
@@ -44,6 +46,7 @@ class TriggerTestCase(unittest.TestCase):
 
 
     def __setup_test(self, trigger):
+        trigger.arm(True)
         self.__log.log.reset_mock()
         self.__parent.on_trigger_change.reset_mock()
         self.__previous_state = trigger.is_triggered()
@@ -275,26 +278,66 @@ class TriggerTestCase(unittest.TestCase):
 
     def testAndTrigger(self):
         print '\n----- testAndTrigger -----'
-        data = { 'name': 'foo', 'type': 'and'}
+        data = {'name': 'foo',
+                'type': 'and',
+                'sub-triggers': [{'name': 'flip-1', 
+                                  'type': 'message',
+                                  'template': {'from': 'switch-1',
+                                               'announce_state':{
+                                                   'value': 'on'}}
+                                 },
+                                 {'name': 'flip-2', 
+                                  'type': 'message',
+                                  'template': {'from': 'switch-2',
+                                               'announce_state': {
+                                                   'value': 'on'}}
+                                 }
+                                ]
+                }
         trigger = TriggerFactory.TriggerFactory.new_trigger(
                 data, self.__executive, self.__parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
+        # TODO: functionality
 
     def testOrTrigger(self):
         print '\n----- testOrTrigger -----'
-        data = { 'name': 'foo', 'type': 'or'}
+        data = {'name': 'foo',
+                'type': 'or',
+                'sub-triggers': [{'name': 'flip-1', 
+                                  'type': 'message',
+                                  'template': {'from': 'switch-1',
+                                               'announce_state':{
+                                                   'value': 'on'}}
+                                 },
+                                 {'name': 'flip-2', 
+                                  'type': 'message',
+                                  'template': {'from': 'switch-2',
+                                               'announce_state': {
+                                                   'value': 'on'}}
+                                 }
+                                ]
+                }
         trigger = TriggerFactory.TriggerFactory.new_trigger(
                 data, self.__executive, self.__parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
+        # TODO: functionality
 
     def testNotTrigger(self):
         print '\n----- testNotTrigger -----'
-        data = { 'name': 'foo', 'type': 'not'}
+        data = { 'name': 'foo',
+                 'type': 'not',
+                 'sub-trigger': {'name': 'bar', 
+                                 'type': 'message',
+                                 'template': {'from': 'the_switch',
+                                              'announce_state': {
+                                                  'value': 'on'}}
+                                }
+                }
         trigger = TriggerFactory.TriggerFactory.new_trigger(
                 data, self.__executive, self.__parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
+        # TODO: test the trigger's functionality
 
-    # TODO: invalid trigger
 
 if __name__ == '__main__':
     unittest.main()  # runs all tests

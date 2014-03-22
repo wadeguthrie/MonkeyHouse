@@ -9,7 +9,6 @@ import re
 import Log
 import Trigger
 
-# TODO: code-up 'arm' and test it
 # TODO: Then: Include the message test in the user's guide
 # TODO: After: Draw-up arrays in the incoming message
 # TODO: Later: Test leading '\'
