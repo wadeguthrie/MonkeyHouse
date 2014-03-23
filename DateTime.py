@@ -9,6 +9,9 @@ import calendar
 import datetime
 import re
 
+# TODO: am/pm
+# Note: 12:00 am is midnight is 00:00:00; 12:00 pm is noon is 12:00:00
+
 class MomentFactory(object):
     """
     Generates an object of the appropriate Moment sub-class (e.g., DateTime or

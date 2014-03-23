@@ -9,9 +9,7 @@ import re
 import Log
 import Trigger
 
-# TODO: Then: Include the message test in the user's guide
-# TODO: After: Draw-up arrays in the incoming message
-# TODO: Later: Test leading '\'
+# TODO: Draw-up arrays in the incoming message
 
 class MessageTemplateFactory(object):
     """Creates Message templates.
@@ -351,13 +349,14 @@ class MessageTrigger(Trigger.Trigger):
                 Message (see the MonkeyHouse design specification for details)
         Returns: nothing.
         """
-        print '===== on_message(%r) =====' % message
-        match = self.__template.matches(message)
-        if match == MessageTrigger.MATCHES:
-            self._set_trigger(triggered=True)
-        elif match == MessageTrigger.DOESNT_MATCH:
-            self._set_trigger(triggered=False)
-        return
+        print '>>>>> on_message(%r) <<<<<' % message
+        if not super(MessageTrigger, self).on_message(message):
+            match = self.__template.matches(message)
+            if match == MessageTrigger.MATCHES:
+                self._set_trigger(triggered=True)
+            elif match == MessageTrigger.DOESNT_MATCH:
+                self._set_trigger(triggered=False)
+            return
 
 
 if __name__ == '__main__':

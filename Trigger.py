@@ -9,10 +9,6 @@ import re
 import Log
 import MessageHandlerInterface
 
-# TODO: Then: Include the message test in the user's guide
-# TODO: After: Draw-up arrays in the incoming message
-# TODO: Later: Test leading '\'
-
 class Trigger(object): # MessageHandlerInterface):
     """
     MonkeyHouse Trigger base class.
@@ -52,10 +48,40 @@ class Trigger(object): # MessageHandlerInterface):
         return self._triggered
 
     def on_message(self, message):
-        """Handles incoming Message from MonkeyHouse."""
-        # TODO: operation: arm
-        # TODO: operation: trigger
-        pass
+        """Handles incoming Message from MonkeyHouse.
+
+        This, the base class, handles 'arm' and 'trigger' messages sent to the
+        Trigger.  The MessageTrigger child class will handle other messages.
+
+        Params:
+            - message - dict containing MonkeyHouse message the Trigger is
+              handling
+
+        Returns: True if this method successfully handled the message.
+        """
+        if ('to' in message and message['to'] != '*' and message['to'] !=
+                self._name):
+            print '  Not directed at us: not \'arm\' or \'trigger\' message'
+            return False  # Not directed at this trigger.
+
+        if 'operation' not in message:
+            print '  No \'operation\': not \'arm\' or \'trigger\' message'
+            return False  # Not our kind of message.
+
+        handled = False
+        # NOTE: this allows the 'arm' and 'trigger' to be in the same message.
+        if 'arm' in message['operation']:
+            armed = True if message['operation']['arm'] == 'yes' else False
+            self.arm(armed)
+            handled = True
+
+        if 'trigger' in message['operation']:
+            triggered = (True if message['operation']['trigger'] == 'yes' else
+                False)
+            self._set_trigger(triggered)
+            handled = True
+
+        return handled
 
     def _set_trigger(self, triggered):
         print 'Trigger(%s)._set_trigger(%s)' % (

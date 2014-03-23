@@ -11,9 +11,7 @@ import DateTime
 import Log
 import Trigger
 
-# TODO: Then: Include the message test in the user's guide
-# TODO: After: Draw-up arrays in the incoming message
-# TODO: Later: Test leading '\'
+# TODO: Test leading '\'
 
 class TimerTrigger(Trigger.Trigger):
     """A MonkeyHouse Timer Trigger.

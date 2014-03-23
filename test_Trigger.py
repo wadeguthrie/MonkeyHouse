@@ -11,8 +11,8 @@ import Log
 import Trigger
 import TriggerFactory
 
+# TODO: Include the message test in the user's guide
 # TODO: test invalid triggers
-# TODO: should a message trigger verify that a message is aimed at them?
 # TODO: should an unarmed trigger save and announce its last state when armed?
 
 # Basis for mocks found below.
@@ -462,7 +462,7 @@ class TriggerTestCase(unittest.TestCase):
         self.__parent.on_trigger_change.assert_called_once_with(
                 Trigger.Trigger.FIRING, False)
 
-    def testZArm(self):
+    def testArm(self):
         print '\n----- testArm -----'
         data = { 'name': 'parent',
                  'type': 'message',
@@ -503,6 +503,45 @@ class TriggerTestCase(unittest.TestCase):
         trigger.arm(True)
         trigger.on_message({'from': 'the_switch',
                             'announce_state': {'value': 'off'}})
+        self.__assert_deactivate(trigger)
+
+    def testZMessageArm(self):
+        print '\n----- testMessageArm -----'
+        data = { 'name': 'parent',
+                 'type': 'message',
+                 'template': {'from': 'the_switch',
+                              'announce_state': { 'value': 'on'}}
+                }
+        trigger = TriggerFactory.TriggerFactory.new_trigger(
+                data, self.__executive, self.__parent, Trigger.Trigger.FIRING)
+        assert not trigger.is_triggered()
+
+        print '\n== armed, triggered, announce =='
+        self.__setup_test(trigger)
+        trigger.on_message({'from': 'exec', 'operation': {'arm': 'yes'}})
+        trigger.on_message({'from': 'exec', 'operation': {'trigger': 'yes'}})
+        self.__assert_activate(trigger)
+
+        print '\n== dis-armed, de-triggered, no-announce  =='
+        self.__setup_test(trigger)
+        trigger.on_message({'from': 'exec', 'operation': {'arm': 'no'}})
+        trigger.on_message({'from': 'exec', 'operation': {'trigger': 'no'}})
+        assert not trigger.is_triggered()
+        assert self.__log.log.call_count == 1
+        assert self.__parent.on_trigger_change.call_count == 0
+
+        print '\n== dis-armed, triggered, no-announce =='
+        self.__setup_test(trigger)
+        trigger.on_message({'from': 'exec', 'operation': {'arm': 'no'}})
+        trigger.on_message({'from': 'exec', 'operation': {'trigger': 'yes'}})
+        assert trigger.is_triggered()
+        assert self.__log.log.call_count == 1
+        assert self.__parent.on_trigger_change.call_count == 0
+
+        print '\n== armed, de-triggered, announce =='
+        self.__setup_test(trigger)
+        trigger.on_message({'from': 'exec', 'operation': {'arm': 'yes'}})
+        trigger.on_message({'from': 'exec', 'operation': {'trigger': 'no'}})
         self.__assert_deactivate(trigger)
 
 if __name__ == '__main__':
