@@ -73,12 +73,12 @@ class Trigger(object): # MessageHandlerInterface):
         self._executive.log.log(Log.Log.INFO,
                                 Log.Log.TRIGGER,
                                 {'type': 'trigger',
-                                  'name': self._name,
-                                  'trigger': 'activated' if triggered else
+                                 'name': self._name,
+                                 'trigger': 'activated' if triggered else
                                     'deactivated',
-                                  'trigger-type': self.__trigger_type_str[
-                                      self.__trigger_type],
-                                  'armed' : 'armed' if self._armed else
+                                 'trigger-type': self.__trigger_type_str[
+                                    self.__trigger_type],
+                                 'armed' : 'armed' if self._armed else
                                     'disarmed'})
 
         # Go ahead and change state if we're not armed but don't report the
