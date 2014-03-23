@@ -338,10 +338,7 @@ class TriggerTestCase(unittest.TestCase):
         #print dir(not_trigger)
         sub_trigger = not_trigger._triggers[0]
         assert not not_trigger.is_triggered()
-        # TODO: triggered->not
         # TODO: triggered->triggered
-
-        # not->triggered (which means the sub-trigger goes triggered->not)
 
         print '\n== sub: not->triggered, trigger: not->not =='
         self.__setup_test(not_trigger)
@@ -351,22 +348,29 @@ class TriggerTestCase(unittest.TestCase):
         assert sub_trigger.is_triggered()
         assert not not_trigger.is_triggered()
         assert self.__log.log.call_count == 1   # One state changed
-        # not_trigger stayed the same, though
         assert self.__parent.on_trigger_change.call_count == 0
 
         print '\n== sub: triggered->not, trigger: not->triggered =='
         self.__setup_test(not_trigger)
-        # sub: triggered->not, trigger: not->triggered
-        #self.__setup_test(not_trigger)
         sub_trigger.on_message({'from': 'the_switch',
                                 'announce_state': {'value': 'off'}})
 
         assert not sub_trigger.is_triggered()
         assert not_trigger.is_triggered()
-        print 'log call count: %d' % self.__log.log.call_count
         assert self.__log.log.call_count == 2   # Both states changed
         self.__parent.on_trigger_change.assert_called_once_with(
                 Trigger.Trigger.FIRING, True)
+
+        print '\n== sub: not->triggered, trigger: triggered->not =='
+        self.__setup_test(not_trigger)
+        sub_trigger.on_message({'from': 'the_switch',
+                                'announce_state': {'value': 'on'}})
+
+        assert sub_trigger.is_triggered()
+        assert not not_trigger.is_triggered()
+        assert self.__log.log.call_count == 2   # Both states changed
+        self.__parent.on_trigger_change.assert_called_once_with(
+                Trigger.Trigger.FIRING, False)
 
         # TODO: should a message trigger verify that a message is aimed at
         # them?
