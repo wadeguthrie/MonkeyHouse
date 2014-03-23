@@ -55,7 +55,11 @@ class AndTrigger(LogicalTrigger):
         When called, this trigger will check with its constituent triggers to
         determine whether this trigger should change state.
         """
+        print 'AND Trigger(%s): checking child triggers' % self._name
         for trigger in self._triggers:
+            print '  Sub-trigger(%s) is %s' % (
+                    trigger._name, 'Triggered' if trigger.is_triggered() else
+                    'NOT triggered')
             if self._triggered == trigger.is_triggered():
                 return # _this_ trigger didn't change
 
@@ -80,10 +84,16 @@ class OrTrigger(LogicalTrigger):
         When called, this trigger will check with its constituent triggers to
         determine whether this trigger should change state.
         """
+        print 'OR Trigger(%s): checking child triggers' % self._name
         for trigger in self._triggers:
-            if self._triggered != trigger.is_triggered():
-                self._set_trigger(not self._triggered)
-                break  # Only change once
+            print '  Sub-trigger(%s) is %s' % (
+                    trigger._name, 'Triggered' if trigger.is_triggered() else
+                    'NOT triggered')
+            if trigger.is_triggered():
+                self._set_trigger(True)
+                return
+        # None of the sub-triggers are set.
+        self._set_trigger(False)
 
 class NotTrigger(LogicalTrigger):
     """

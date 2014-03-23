@@ -301,7 +301,7 @@ class TriggerTestCase(unittest.TestCase):
 
     def testOrTrigger(self):
         print '\n----- testOrTrigger -----'
-        data = {'name': 'foo',
+        data = {'name': 'parent',
                 'type': 'or',
                 'sub-triggers': [{'name': 'flip-1', 
                                   'type': 'message',
@@ -320,7 +320,57 @@ class TriggerTestCase(unittest.TestCase):
         trigger = TriggerFactory.TriggerFactory.new_trigger(
                 data, self.__executive, self.__parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
-        # TODO: functionality
+        sub_1_trigger = trigger._triggers[0]
+        sub_2_trigger = trigger._triggers[1]
+
+        # flip-1 -> on, parent -> on
+        print '\n== flip-1 -> on, parent -> on =='
+        self.__setup_test(trigger)
+        sub_1_trigger.on_message({'from': 'switch-1',
+                                  'announce_state': {'value': 'on'}})
+
+        assert sub_1_trigger.is_triggered()
+        assert not sub_2_trigger.is_triggered()
+        assert trigger.is_triggered()
+        assert self.__log.log.call_count == 2
+        assert self.__parent.on_trigger_change.call_count == 1
+
+        # flip-2 -> on, parent (no change)
+        print '\n== flip-2 -> on, parent (no change) =='
+        self.__setup_test(trigger)
+        sub_2_trigger.on_message({'from': 'switch-2',
+                                  'announce_state': {'value': 'on'}})
+
+        assert sub_1_trigger.is_triggered()
+        assert sub_2_trigger.is_triggered()
+        assert trigger.is_triggered()
+        assert self.__log.log.call_count == 1
+        assert self.__parent.on_trigger_change.call_count == 0
+
+        # flip-2 -> off, parent -> (no change)
+        print '\n== flip-2 -> off, parent -> (no change) =='
+        self.__setup_test(trigger)
+        sub_2_trigger.on_message({'from': 'switch-2',
+                                  'announce_state': {'value': 'off'}})
+
+        assert sub_1_trigger.is_triggered()
+        assert not sub_2_trigger.is_triggered()
+        assert trigger.is_triggered()
+        assert self.__log.log.call_count == 1
+        assert self.__parent.on_trigger_change.call_count == 0
+
+        # flip-1 -> off, parent -> off
+        print '\n== flip-1 -> off, parent -> off =='
+        self.__setup_test(trigger)
+        sub_1_trigger.on_message({'from': 'switch-1',
+                                  'announce_state': {'value': 'off'}})
+
+        assert not sub_1_trigger.is_triggered()
+        assert not sub_2_trigger.is_triggered()
+        assert not trigger.is_triggered()
+        assert self.__log.log.call_count == 2
+        assert self.__parent.on_trigger_change.call_count == 1
+
 
     def testNotTrigger(self):
         print '\n----- testNotTrigger -----'
@@ -335,10 +385,8 @@ class TriggerTestCase(unittest.TestCase):
                 }
         not_trigger = TriggerFactory.TriggerFactory.new_trigger(
                 data, self.__executive, self.__parent, Trigger.Trigger.FIRING)
-        #print dir(not_trigger)
         sub_trigger = not_trigger._triggers[0]
         assert not not_trigger.is_triggered()
-        # TODO: triggered->triggered
 
         print '\n== sub: not->triggered, trigger: not->not =='
         self.__setup_test(not_trigger)
