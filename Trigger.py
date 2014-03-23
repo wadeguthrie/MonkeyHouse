@@ -43,6 +43,8 @@ class Trigger(object): # MessageHandlerInterface):
 
     def arm(self, armed):
         """Tells the trigger to be ready to trigger."""
+        print 'Trigger(%s).arm(%s)' % (self._name,
+                                       'ARMED' if armed else 'NOT armed')
         self._armed = armed
 
     def is_triggered(self):
@@ -56,11 +58,18 @@ class Trigger(object): # MessageHandlerInterface):
         pass
 
     def _set_trigger(self, triggered):
+        print 'Trigger(%s)._set_trigger(%s)' % (
+                self._name,
+                'Triggered' if triggered else 'NOT Triggered')
         """Triggers or de-triggers a MonkeyHouse Trigger."""
         if self._triggered == triggered:
+            print '  Not changing triggered value'
             return
 
         self._triggered = triggered
+        print 'Trigger(%s) now %s' % (
+                self._name,
+                'Triggered' if self._triggered else 'NOT Triggered')
         self._executive.log.log(Log.Log.INFO,
                                 Log.Log.TRIGGER,
                                 {'type': 'trigger',
@@ -75,8 +84,11 @@ class Trigger(object): # MessageHandlerInterface):
         # Go ahead and change state if we're not armed but don't report the
         # state change.
         if self._armed:
+            print '  Armed, informing parent'
             self._parent.on_trigger_change(self.__trigger_type,
                                            self._triggered)
+        else:
+            print '  Not armed, not informing parent'
 
 if __name__ == '__main__':
     pass
