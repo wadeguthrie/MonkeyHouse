@@ -60,10 +60,10 @@ class AndTrigger(LogicalTrigger):
             print '  Sub-trigger(%s) is %s' % (
                     trigger._name, 'Triggered' if trigger.is_triggered() else
                     'NOT triggered')
-            if self._triggered == trigger.is_triggered():
-                return # _this_ trigger didn't change
-
-        self._set_trigger(not self._triggered)
+            if not trigger.is_triggered():
+                self._set_trigger(False)
+                return
+        self._set_trigger(True)
 
 class OrTrigger(LogicalTrigger):
     """

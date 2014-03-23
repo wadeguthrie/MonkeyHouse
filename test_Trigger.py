@@ -13,6 +13,7 @@ import TriggerFactory
 
 # TODO: test 'arm'
 # TODO: test invalid triggers
+# TODO: should a message trigger verify that a message is aimed at them?
 
 # Basis for mocks found below.
 class ParentFake(object):
@@ -297,7 +298,52 @@ class TriggerTestCase(unittest.TestCase):
         trigger = TriggerFactory.TriggerFactory.new_trigger(
                 data, self.__executive, self.__parent, Trigger.Trigger.FIRING)
         assert not trigger.is_triggered()
-        # TODO: functionality
+        sub_1_trigger = trigger._triggers[0]
+        sub_2_trigger = trigger._triggers[1]
+
+        print '\n== flip-1 -> on, parent -> (unchanged) =='
+        self.__setup_test(trigger)
+        sub_1_trigger.on_message({'from': 'switch-1',
+                                  'announce_state': {'value': 'on'}})
+
+        assert sub_1_trigger.is_triggered()
+        assert not sub_2_trigger.is_triggered()
+        assert not trigger.is_triggered()
+        assert self.__log.log.call_count == 1
+        assert self.__parent.on_trigger_change.call_count == 0
+
+        print '\n== flip-2 -> on, parent-> on =='
+        self.__setup_test(trigger)
+        sub_2_trigger.on_message({'from': 'switch-2',
+                                  'announce_state': {'value': 'on'}})
+
+        assert sub_1_trigger.is_triggered()
+        assert sub_2_trigger.is_triggered()
+        assert trigger.is_triggered()
+        assert self.__log.log.call_count == 2
+        assert self.__parent.on_trigger_change.call_count == 1
+
+        print '\n== flip-2 -> off, parent -> off =='
+        self.__setup_test(trigger)
+        sub_2_trigger.on_message({'from': 'switch-2',
+                                  'announce_state': {'value': 'off'}})
+
+        assert sub_1_trigger.is_triggered()
+        assert not sub_2_trigger.is_triggered()
+        assert not trigger.is_triggered()
+        assert self.__log.log.call_count == 2
+        assert self.__parent.on_trigger_change.call_count == 1
+
+        print '\n== flip-1 -> off, parent -> (unchanged) =='
+        self.__setup_test(trigger)
+        sub_1_trigger.on_message({'from': 'switch-1',
+                                  'announce_state': {'value': 'off'}})
+
+        assert not sub_1_trigger.is_triggered()
+        assert not sub_2_trigger.is_triggered()
+        assert not trigger.is_triggered()
+        assert self.__log.log.call_count == 1
+        assert self.__parent.on_trigger_change.call_count == 0
 
     def testOrTrigger(self):
         print '\n----- testOrTrigger -----'
@@ -323,7 +369,6 @@ class TriggerTestCase(unittest.TestCase):
         sub_1_trigger = trigger._triggers[0]
         sub_2_trigger = trigger._triggers[1]
 
-        # flip-1 -> on, parent -> on
         print '\n== flip-1 -> on, parent -> on =='
         self.__setup_test(trigger)
         sub_1_trigger.on_message({'from': 'switch-1',
@@ -335,7 +380,6 @@ class TriggerTestCase(unittest.TestCase):
         assert self.__log.log.call_count == 2
         assert self.__parent.on_trigger_change.call_count == 1
 
-        # flip-2 -> on, parent (no change)
         print '\n== flip-2 -> on, parent (no change) =='
         self.__setup_test(trigger)
         sub_2_trigger.on_message({'from': 'switch-2',
@@ -347,7 +391,6 @@ class TriggerTestCase(unittest.TestCase):
         assert self.__log.log.call_count == 1
         assert self.__parent.on_trigger_change.call_count == 0
 
-        # flip-2 -> off, parent -> (no change)
         print '\n== flip-2 -> off, parent -> (no change) =='
         self.__setup_test(trigger)
         sub_2_trigger.on_message({'from': 'switch-2',
@@ -359,7 +402,6 @@ class TriggerTestCase(unittest.TestCase):
         assert self.__log.log.call_count == 1
         assert self.__parent.on_trigger_change.call_count == 0
 
-        # flip-1 -> off, parent -> off
         print '\n== flip-1 -> off, parent -> off =='
         self.__setup_test(trigger)
         sub_1_trigger.on_message({'from': 'switch-1',
@@ -420,8 +462,6 @@ class TriggerTestCase(unittest.TestCase):
         self.__parent.on_trigger_change.assert_called_once_with(
                 Trigger.Trigger.FIRING, False)
 
-        # TODO: should a message trigger verify that a message is aimed at
-        # them?
 
 
 if __name__ == '__main__':
