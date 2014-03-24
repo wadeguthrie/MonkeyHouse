@@ -51,8 +51,6 @@ class DateTimeTestCase(unittest.TestCase):
         when = DateTime.MomentFactory.new_moment("10:11:12")
         self.__assert_time(when, None, None, None, 10, 11, 12)
 
-        # TODO: am/pm
-
     def testTimeDateFirst(self):
         print '\n----- testTimeDateFirst -----'
         when = DateTime.MomentFactory.new_moment("20 March 1920 10:11:12")

@@ -1,9 +1,7 @@
 #! /usr/bin/python
 
-import json
 import mock
 import os
-import shutil
 import unittest
 
 import Executive

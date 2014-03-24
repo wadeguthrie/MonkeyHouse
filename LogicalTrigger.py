@@ -4,9 +4,6 @@
 Implements Logical Triggers for MonkeyHouse.
 """
 
-import re
-
-import Log
 import Trigger
 import TriggerFactory
 
@@ -55,10 +52,10 @@ class AndTrigger(LogicalTrigger):
         When called, this trigger will check with its constituent triggers to
         determine whether this trigger should change state.
         """
-        print 'AND Trigger(%s): checking child triggers' % self._name
+        print 'AND Trigger(%s): checking child triggers' % self.name
         for trigger in self._triggers:
             print '  Sub-trigger(%s) is %s' % (
-                    trigger._name, 'Triggered' if trigger.is_triggered() else
+                    trigger.name, 'Triggered' if trigger.is_triggered() else
                     'NOT triggered')
             if not trigger.is_triggered():
                 self._set_trigger(False)
@@ -84,10 +81,10 @@ class OrTrigger(LogicalTrigger):
         When called, this trigger will check with its constituent triggers to
         determine whether this trigger should change state.
         """
-        print 'OR Trigger(%s): checking child triggers' % self._name
+        print 'OR Trigger(%s): checking child triggers' % self.name
         for trigger in self._triggers:
             print '  Sub-trigger(%s) is %s' % (
-                    trigger._name, 'Triggered' if trigger.is_triggered() else
+                    trigger.name, 'Triggered' if trigger.is_triggered() else
                     'NOT triggered')
             if trigger.is_triggered():
                 self._set_trigger(True)

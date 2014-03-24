@@ -7,7 +7,7 @@ events to the objects waiting for them.  It also manages a Message queue,
 accepting Messages and delivering them.
 """
 
-import datetime
+#import datetime
 
 class Executive(object):
     """
@@ -22,6 +22,7 @@ class Executive(object):
         self.state = self.INITIALIZING
         self.__targets = []
         self.__bridges = []
+        self.__timers = []
         self.log = log
 
     def get_state(self):
@@ -38,19 +39,23 @@ class Executive(object):
         return state
 
     def register_timer_handler(self, timer_handler, parameter, timeout):
-        now = datetime.datetime.now()
-        timeout_seconds = 0 if timeout <= now else (timeout - now).seconds()
-        self._register_timer_handler(timeout_seconds, (parameter,
-                                                       timer_handler))
+        """Adds a timer (and timeout) to __timers
 
-    def _register_timer_handler(self, seconds, param_handler):
-        # TODO: Adds timer_handler, in sorted order of their timeouts but
-        # after any existing triggers with the same timeout, to the
-        # timer_queue.  The parameter is for the registrant to provide data
-        # to be handed back when the timer goes off.  Among other things,
-        # this can provide data to differentiate two different timers handled
-        # by the same interface.
-        pass
+        Params:
+            - timer_handler - TimerHandlerInterface (or, really, anything with
+                an |on_timeout| method.  Called when now >= |timeout|
+            - parameter - anything -- passed back to timer_handler on timeout
+            - timeout - datetime object describing when |timer_handler| should
+                be called.
+        """
+        # Insert, sorted, into the list of timers
+        for i in range(len(self.__timers)):
+            if timeout < self.__timers[i][0]:  # TODO: name indecis
+                self.__timers.insert(i, (timeout, timer_handler, parameter))
+                return
+        # If it didn't fit before any existing timers, add at the end
+        self.__timers.insert(len(self.__timers),
+                            (timeout, timer_handler, parameter))
 
 # Main
 if __name__ == '__main__':

@@ -4,10 +4,7 @@
 Implements Trigger base class for MonkeyHouse.
 """
 
-import re
-
 import Log
-import MessageHandlerInterface
 
 class Trigger(object): # MessageHandlerInterface):
     """
@@ -30,7 +27,7 @@ class Trigger(object): # MessageHandlerInterface):
 
         """
         print 'Trigger ctor'
-        self._name = data['name']
+        self.name = data['name']
         self.__trigger_type = trigger_type
         self._executive = executive
         self._parent = parent
@@ -39,7 +36,7 @@ class Trigger(object): # MessageHandlerInterface):
 
     def arm(self, armed):
         """Tells the trigger to be ready to trigger."""
-        print 'Trigger(%s).arm(%s)' % (self._name,
+        print 'Trigger(%s).arm(%s)' % (self.name,
                                        'ARMED' if armed else 'NOT armed')
         self._armed = armed
 
@@ -60,7 +57,7 @@ class Trigger(object): # MessageHandlerInterface):
         Returns: True if this method successfully handled the message.
         """
         if ('to' in message and message['to'] != '*' and message['to'] !=
-                self._name):
+                self.name):
             print '  Not directed at us: not \'arm\' or \'trigger\' message'
             return False  # Not directed at this trigger.
 
@@ -84,22 +81,22 @@ class Trigger(object): # MessageHandlerInterface):
         return handled
 
     def _set_trigger(self, triggered):
-        print 'Trigger(%s)._set_trigger(%s)' % (
-                self._name,
-                'Triggered' if triggered else 'NOT Triggered')
         """Triggers or de-triggers a MonkeyHouse Trigger."""
+        print 'Trigger(%s)._set_trigger(%s)' % (
+                self.name,
+                'Triggered' if triggered else 'NOT Triggered')
         if self._triggered == triggered:
             print '  Not changing triggered value'
             return
 
         self._triggered = triggered
         print 'Trigger(%s) now %s' % (
-                self._name,
+                self.name,
                 'Triggered' if self._triggered else 'NOT Triggered')
         self._executive.log.log(Log.Log.INFO,
                                 Log.Log.TRIGGER,
                                 {'type': 'trigger',
-                                 'name': self._name,
+                                 'name': self.name,
                                  'trigger': 'activated' if triggered else
                                     'deactivated',
                                  'trigger-type': self.__trigger_type_str[

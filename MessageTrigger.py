@@ -6,7 +6,6 @@ Implements Message Triggers for MonkeyHouse.
 
 import re
 
-import Log
 import Trigger
 
 # TODO: Draw-up arrays in the incoming message
